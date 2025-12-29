@@ -34,14 +34,22 @@ suite('MagoOutputParser Test Suite', () => {
       const diagnostics = parser.parse(jsonOutput, fileUri);
 
       assert.strictEqual(diagnostics.length, 1);
-      assert.strictEqual(diagnostics[0].message.includes('Test error message'), true);
-      assert.strictEqual(diagnostics[0].message.includes('Note 1'), true);
-      assert.strictEqual(diagnostics[0].message.includes('Note 2'), true);
-      assert.strictEqual(diagnostics[0].message.includes('Help:'), true);
+
+      // Message should only contain the main error message
+      assert.strictEqual(diagnostics[0].message, 'Test error message');
       assert.strictEqual(diagnostics[0].severity, vscode.DiagnosticSeverity.Error);
       assert.strictEqual(diagnostics[0].code, 'test-error');
       assert.strictEqual(diagnostics[0].range.start.line, 9); // 0-indexed
       assert.strictEqual(diagnostics[0].range.start.character, 4); // 0-indexed
+
+      // Notes and help should be in relatedInformation
+      assert.ok(diagnostics[0].relatedInformation);
+      assert.strictEqual(diagnostics[0].relatedInformation!.length, 3); // 2 notes + 1 help
+
+      const relatedMessages = diagnostics[0].relatedInformation!.map(r => r.message);
+      assert.strictEqual(relatedMessages.some(m => m.includes('Note 1')), true);
+      assert.strictEqual(relatedMessages.some(m => m.includes('Note 2')), true);
+      assert.strictEqual(relatedMessages.some(m => m.includes('Help:')), true)
     });
 
     test('Should parse JSON array of issues', () => {
