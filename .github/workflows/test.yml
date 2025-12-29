@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Xvfb for headless testing
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgtk-3-0 libgbm1 libasound2
+          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0 libgbm1
 
       - name: Run tests
         uses: coactions/setup-xvfb@v1
