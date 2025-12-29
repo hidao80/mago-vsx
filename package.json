@@ -1,0 +1,138 @@
+{
+  "name": "mago-vsx",
+  "displayName": "Mago - PHP Static Analysis",
+  "description": "PHP static analysis tool integration for VS Code",
+  "version": "0.1.0",
+  "publisher": "hidao80",
+  "license": "MIT",
+  "icon": "images/icon256.png",
+  "icons": {
+    "72": "images/icon72.png",
+    "256": "images/icon256.png"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hidao80/mago-vscode"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mago.lintCurrentFile",
+        "title": "Mago: Lint Current File"
+      },
+      {
+        "command": "mago.analyzeCurrentFile",
+        "title": "Mago: Analyze Current File"
+      },
+      {
+        "command": "mago.lintAndAnalyzeCurrentFile",
+        "title": "Mago: Lint & Analyze Current File"
+      },
+      {
+        "command": "mago.lintProject",
+        "title": "Mago: Lint Project"
+      },
+      {
+        "command": "mago.analyzeProject",
+        "title": "Mago: Analyze Project"
+      },
+      {
+        "command": "mago.lintAndAnalyzeProject",
+        "title": "Mago: Lint & Analyze Project"
+      },
+      {
+        "command": "mago.formatCurrentFile",
+        "title": "Mago: Format Current File"
+      },
+      {
+        "command": "mago.formatProject",
+        "title": "Mago: Format Project"
+      },
+      {
+        "command": "mago.formatCheck",
+        "title": "Mago: Format Check (CI)"
+      },
+      {
+        "command": "mago.generateLintBaseline",
+        "title": "Mago: Generate Lint Baseline"
+      },
+      {
+        "command": "mago.generateAnalyzeBaseline",
+        "title": "Mago: Generate Analyze Baseline"
+      }
+    ],
+    "configuration": {
+      "title": "Mago",
+      "properties": {
+        "mago.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run lint on file save"
+        },
+        "mago.analyzeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run analyze on file save"
+        },
+        "mago.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run format on file save"
+        },
+        "mago.lintBaseline": {
+          "type": "string",
+          "default": "",
+          "description": "Path to lint baseline file (e.g., lint-baseline.toml)"
+        },
+        "mago.analyzeBaseline": {
+          "type": "string",
+          "default": "",
+          "description": "Path to analyze baseline file (e.g., analysis-baseline.toml)"
+        },
+        "mago.executablePath": {
+          "type": "string",
+          "default": "mago",
+          "description": "Path to mago executable"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "pnpm run compile && mocha --ui tdd ./out/test/suite/**/*.test.js",
+    "package": "pnpm run compile && vsce package",
+    "publish": "pnpm run compile && vsce publish",
+    "install:vscode": "pnpm run package && code --install-extension mago-vsx-0.1.0.vsix",
+    "uninstall:vscode": "code --uninstall-extension hidao80.mago-vsx"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "devDependencies": {
+    "@types/glob": "^9.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^8.0.0",
+    "mocha": "^11.7.5",
+    "typescript": "^5.0.0"
+  }
+}
