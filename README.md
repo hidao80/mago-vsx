@@ -1,8 +1,8 @@
 # Mago - PHP Static Analysis for VS Code
 
-![](images/hero_image.png)
+![hero_image](https://github.com/user-attachments/assets/feee19ec-dace-4dc8-8da6-726035912f29)
 
-[![CI](https://github.com/hidao80/mago-vscode/workflows/CI/badge.svg)](https://github.com/hidao80/mago-vscode/actions/workflows/test.yml)
+[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)
 
 VS Code extension for integrating the Mago PHP static analysis tool.
 
