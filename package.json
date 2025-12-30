@@ -2,7 +2,7 @@
   "name": "mago-vsx",
   "displayName": "Mago - PHP Static Analysis",
   "description": "PHP static analysis tool integration for VS Code",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "hidao80",
   "license": "MIT",
   "icon": "images/icon256.png",
@@ -118,7 +118,7 @@
     "test:unit": "pnpm run compile && mocha --ui tdd ./out/test/suite/**/*.test.js",
     "package": "pnpm run compile && vsce package",
     "publish": "pnpm run compile && vsce publish",
-    "install:vscode": "pnpm run package && code --install-extension mago-vsx-0.1.0.vsix",
+    "install:vscode": "pnpm run package && code --install-extension mago-vsx-0.1.1.vsix",
     "uninstall:vscode": "code --uninstall-extension hidao80.mago-vsx"
   },
   "packageManager": "pnpm@9.0.0",
