@@ -1,9 +1,10 @@
 # Mago - PHP Static Analysis for VS Code
 
 ![hero_image](https://github.com/user-attachments/assets/feee19ec-dace-4dc8-8da6-726035912f29)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hidao80/mago-vsx)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hidao80/mago-vsx)
 
 VS Code extension for integrating the Mago PHP static analysis tool.
 
