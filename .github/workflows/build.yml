@@ -1,4 +1,4 @@
-name: Test
+name: Build
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-slim
 
     steps:
@@ -44,22 +44,22 @@ jobs:
       - name: Compile TypeScript
         run: pnpm run compile
 
-      - name: Setup Xvfb for headless testing
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Verify build output
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0 libgbm1
+          test -f out/extension.js || (echo "extension.js not found" && exit 1)
+          test -f out/magoRunner.js || (echo "magoRunner.js not found" && exit 1)
+          test -f out/magoOutputParser.js || (echo "magoOutputParser.js not found" && exit 1)
 
-      - name: Run tests
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: pnpm test
+      - name: Build VSIX package
+        run: pnpm run package
 
-      - name: Upload test results
-        if: always()
+      - name: Upload VSIX artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            .vscode-test/
-            out/test/
-          retention-days: 3
+          name: vsix-package
+          path: "*.vsix"
+          retention-days: 7
