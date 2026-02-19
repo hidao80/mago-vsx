@@ -1,14 +1,10 @@
 # Mago - PHP Static Analysis for VS Code
 
-![hero_image](https://github.com/user-attachments/assets/feee19ec-dace-4dc8-8da6-726035912f29)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&emsp;[![audit](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml)&emsp;[![lint](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml)&emsp;[![build](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml)&emsp;[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)&emsp;[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hidao80/mago-vsx)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hidao80/mago-vsx)
+***VS Code extension for integrating the Mago PHP static analysis tool.***
 
-VS Code extension for integrating the Mago PHP static analysis tool.
-
-## Features
+## :sparkles: Features
 
 - **Lint and Analyze PHP Files**: Run Mago's lint and analyze commands on individual files or entire projects
 - **Format PHP Files**: Format your PHP code using Mago's formatter with support for format-on-save
@@ -18,7 +14,7 @@ VS Code extension for integrating the Mago PHP static analysis tool.
 - **Command Palette Integration**: Access all Mago commands directly from the command palette
 - **Smart Error Handling**: Clear error messages for TOML configuration errors and execution failures
 
-## Commands
+## :keyboard: Commands
 
 ### Lint & Analyze
 
@@ -40,7 +36,7 @@ VS Code extension for integrating the Mago PHP static analysis tool.
 - `Mago: Generate Lint Baseline` - Generate a baseline file to suppress existing lint issues
 - `Mago: Generate Analyze Baseline` - Generate a baseline file to suppress existing analysis issues
 
-## Configuration
+## :gear: Configuration
 
 - `mago.lintOnSave` (default: `true`) - Run lint automatically when a PHP file is saved
 - `mago.analyzeOnSave` (default: `true`) - Run analyze automatically when a PHP file is saved
@@ -62,12 +58,12 @@ This is useful for:
 - Focusing on new issues in pull requests
 - Establishing quality baselines for legacy codebases
 
-## Requirements
+## :clipboard: Requirements
 
 - Mago PHP static analysis tool must be installed and available in your PATH, or you must specify the path in settings
 - Node.js and pnpm (or npm) for development
 
-## Development Setup
+## :hammer_and_wrench: Development Setup
 
 1. Clone this repository
 2. Install dependencies:
@@ -147,7 +143,7 @@ pnpm run publish
 npm run publish
 ```
 
-## Installation
+## :package: Installation
 
 ### From VS Code Marketplace
 
@@ -169,14 +165,14 @@ npm run publish
 
 - Mago PHP static analysis tool must be installed and available in your PATH, or you must specify the path in settings
 
-## Usage
+## :rocket: Usage
 
 1. Open a PHP file
 2. The extension will automatically run lint and analyze on save (if enabled)
 3. Or use the command palette (Ctrl+Shift+P / Cmd+Shift+P) and search for "Mago" commands
 4. View detected issues in the Problems pane (View > Problems)
 
-## Technical Highlights
+## :zap: Technical Highlights
 
 - **Clean Architecture**: Refactored codebase with 26% code reduction while adding features
 - **Type Safety**: Full TypeScript strict mode with comprehensive type definitions
@@ -185,9 +181,14 @@ npm run publish
 - **JSON Validation**: Intelligent output parsing to distinguish valid empty results from errors
 - **CI/CD**: Automated testing with security audits via GitHub Actions
 
-## Release Notes
+## :memo: Release Notes
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+### 0.2.0
+
+- **Type Safety**: Introduced `src/types.ts` centralizing all Mago-specific types; replaced `any` with concrete types (`MagoJsonOutput`, `MagoJsonIssue`, etc.)
+- **Code Quality**: Fixed all lint errors — replaced `forEach` with `for...of` loops and removed non-null assertions
 
 ### 0.1.0
 
