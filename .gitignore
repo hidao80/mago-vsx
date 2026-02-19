@@ -12,3 +12,6 @@ yarn.lock
 
 # pnpm
 .pnpm-debug.log
+
+# files
+CLAUDE.md
