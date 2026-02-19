@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -44,22 +44,15 @@ jobs:
       - name: Compile TypeScript
         run: pnpm run compile
 
-      - name: Setup Xvfb for headless testing
+      - name: Install VS Code system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0 libgbm1
+          sudo apt-get install -y --no-install-recommends \
+            xvfb \
+            libgtk-3-0t64 \
+            libgbm1 \
+            libnss3 \
+            libasound2t64
 
       - name: Run tests
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: pnpm test
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            .vscode-test/
-            out/test/
-          retention-days: 3
+        run: xvfb-run -a pnpm test
