@@ -2,7 +2,7 @@
   "name": "mago-vsx",
   "displayName": "Mago - PHP Static Analysis",
   "description": "PHP static analysis tool integration for VS Code",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "hidao80",
   "license": "MIT",
   "icon": "images/icon256.png",
@@ -113,26 +113,38 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile",
-    "lint": "eslint src --ext ts",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
     "test": "node ./out/test/runTest.js",
     "test:unit": "pnpm run compile && mocha --ui tdd ./out/test/suite/**/*.test.js",
     "package": "pnpm run compile && vsce package",
     "publish": "pnpm run compile && vsce publish",
-    "install:vscode": "pnpm run package && code --install-extension mago-vsx-0.1.1.vsix",
+    "install:vscode": "pnpm run package && code --install-extension mago-vsx-0.2.0.vsix",
     "uninstall:vscode": "code --uninstall-extension hidao80.mago-vsx"
   },
   "packageManager": "pnpm@9.0.0",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
     "@types/glob": "^9.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.80.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
-    "eslint": "^8.0.0",
     "mocha": "^11.7.5",
     "typescript": "^5.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "lodash@>=4.0.0 <=4.17.22": ">=4.17.23",
+      "undici@>=7.0.0 <7.18.2": ">=7.18.2",
+      "diff@>=6.0.0 <8.0.3": ">=8.0.3",
+      "@isaacs/brace-expansion@<=5.0.0": ">=5.0.1",
+      "qs@<6.14.1": ">=6.14.1",
+      "qs@>=6.7.0 <=6.14.1": ">=6.14.2",
+      "markdown-it@>=13.0.0 <14.1.1": ">=14.1.1",
+      "ajv@<8.18.0": ">=8.18.0",
+      "minimatch@<10.2.1": ">=10.2.1"
+    }
   }
 }
