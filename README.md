@@ -1,6 +1,6 @@
 # Mago - PHP Static Analysis for VS Code
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&emsp;[![audit](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml)&emsp;[![lint](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml)&emsp;[![build](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml)&emsp;[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&emsp;[![audit](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml)&emsp;[![lint](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml)&emsp;[![build](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml)&emsp;[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)&emsp;[![Takumi Guard](https://github.com/hidao80/mago-vsx/actions/workflows/npm-scan.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/npm-scan.yml)
 
 ***VS Code extension for integrating the Mago PHP static analysis tool.***
 
@@ -180,6 +180,11 @@ npm run publish
 - **Efficient Diagnostics**: Smart diagnostic merging for combined lint+analyze operations
 - **JSON Validation**: Intelligent output parsing to distinguish valid empty results from errors
 - **CI/CD**: Automated testing with security audits via GitHub Actions
+
+## :handshake: Contributing
+
+Contributions are welcome!  
+Please note that this project uses [Takumi Guard](https://github.com/flatt-security/setup-takumi-guard-npm) in CI workflows to scan dependencies for malware and ensure supply chain security. This scanning only applies to CI and does not affect your local development environment.
 
 ## :memo: Release Notes
 
