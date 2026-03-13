@@ -1,6 +1,11 @@
 # Mago - PHP Static Analysis for VS Code
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&emsp;[![audit](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml)&emsp;[![lint](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml)&emsp;[![build](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml)&emsp;[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)&emsp;[![Security: Takumi Guard](https://img.shields.io/badge/Security-Takumi%20Guard-blue)](https://github.com/hidao80/mago-vsx/actions/workflows/npm-scan.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![audit](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/audit.yml)
+[![lint](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml)
+[![build](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/build.yml)
+[![test](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg)](https://github.com/hidao80/mago-vsx/actions/workflows/test.yml)
+[![Security: Takumi Guard](https://img.shields.io/badge/Security-Takumi%20Guard-blue)](https://github.com/hidao80/mago-vsx/actions/workflows/npm-scan.yml)
 
 ***VS Code extension for integrating the Mago PHP static analysis tool.***
 
