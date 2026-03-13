@@ -4,93 +4,93 @@ description: TypeScript coding conventions, linter settings, and formatting rule
 type: reference
 ---
 
-# コードスタイルガイド
+# Code Style Guide
 
-## ツールチェーン
+## Toolchain
 
-- **コンパイラ**: TypeScript (`strict: true`、`target: ES2020`、`module: commonjs`)
-- **リンター/フォーマッター**: Biome (`pnpm run lint` / `pnpm run lint:fix`) — ESLint・Prettier は使用しない
-- **チェックコマンド**: `pnpm exec tsc --noEmit` でエミットせず型チェックのみ実行
+- **Compiler**: TypeScript (`strict: true`, `target: ES2020`, `module: commonjs`)
+- **Linter/Formatter**: Biome (`pnpm run lint` / `pnpm run lint:fix`) — do not use ESLint or Prettier
+- **Type-check only**: `pnpm exec tsc --noEmit` (no emit)
 
-## TypeScript 厳格設定（tsconfig.json）
+## TypeScript Strict Settings (tsconfig.json)
 
-以下のフラグがすべて有効。コードを追加・修正する際は全項目をパスさせること。
+All flags below are enabled. Any code additions or modifications must pass all of them.
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |---|---|
-| `strict` | strictNullChecks・noImplicitAny 等を一括有効化 |
-| `noUnusedLocals` | 未使用ローカル変数をエラー扱い |
-| `noUnusedParameters` | 未使用引数をエラー扱い |
-| `noImplicitReturns` | すべてのコードパスで return が必要 |
-| `noFallthroughCasesInSwitch` | switch の fall-through 禁止 |
+| `strict` | Enables strictNullChecks, noImplicitAny, etc. in one shot |
+| `noUnusedLocals` | Unused local variables are errors |
+| `noUnusedParameters` | Unused parameters are errors |
+| `noImplicitReturns` | All code paths must return a value |
+| `noFallthroughCasesInSwitch` | Fall-through in switch cases is forbidden |
 
-## 命名規則
+## Naming Conventions
 
-| 対象 | ケース | 例 |
+| Target | Case | Example |
 |---|---|---|
-| クラス・インタフェース・型エイリアス | PascalCase | `MagoRunner`, `MagoJsonIssue` |
-| メソッド・変数・関数 | camelCase | `runLint`, `parseJsonIssue` |
-| ファイル名 | camelCase（型ファイルも同様） | `magoRunner.ts`, `types.ts` |
-| enum 値 | PascalCase | `"Primary"`, `"Secondary"` |
+| Classes, interfaces, type aliases | PascalCase | `MagoRunner`, `MagoJsonIssue` |
+| Methods, variables, functions | camelCase | `runLint`, `parseJsonIssue` |
+| File names | camelCase (including type files) | `magoRunner.ts`, `types.ts` |
+| Enum values | PascalCase | `"Primary"`, `"Secondary"` |
 
-## インポートスタイル
+## Import Style
 
 ```typescript
-// Node.js 組み込みモジュールは必ず `node:` プロトコルを付ける
+// Always use the `node:` protocol for built-in Node.js modules
 import * as child_process from "node:child_process";
 import * as path from "node:path";
 
-// 型のみインポートは `import type` を使う
+// Use `import type` for type-only imports
 import type { MagoCommand, SpawnResult } from "./types";
 
-// 値＋型の混在インポートは通常の import
+// Use regular import when mixing values and types
 import { MagoOutputParser } from "./magoOutputParser";
 ```
 
-## 基本フォーマット
+## Basic Formatting
 
-- インデント: **タブ**（Biome デフォルト）
-- 文字列: **ダブルクォート**（Biome が強制）
-- セミコロン: **必須**
-- 末尾カンマ: 複数行の引数・配列・オブジェクトには付ける
+- Indent: **tabs** (Biome default)
+- Strings: **double quotes** (enforced by Biome)
+- Semicolons: **required**
+- Trailing commas: add them to multi-line arguments, arrays, and objects
 
-## ループと配列操作
+## Loops and Array Operations
 
-`forEach` は使わず `for...of` を使う（Biome ルールで強制）。
+Use `for...of` instead of `forEach` (enforced by Biome rules).
 
 ```typescript
-// ✅ 正しい
+// ✅ Correct
 for (const item of items) { ... }
 
-// ❌ 使用しない
+// ❌ Do not use
 items.forEach(item => { ... });
 ```
 
-## 非 null アサーション
+## Non-null Assertions
 
-`!` (non-null assertion) はできる限り避ける。オプショナルチェーン `?.` か明示的な null チェックを使う。
+Avoid `!` (non-null assertion) as much as possible. Use optional chaining `?.` or explicit null checks instead.
 
 ```typescript
-// ✅ 推奨
+// ✅ Preferred
 diagnosticsByFile.get(filePath)?.push(diagnostic);
 
-// ❌ 避ける
+// ❌ Avoid
 diagnosticsByFile.get(filePath)!.push(diagnostic);
 ```
 
-## 型定義の置き場
+## Where to Put Type Definitions
 
-複数モジュールをまたぐ型はすべて `src/types.ts` に集約する。単一ファイル内でのみ使う型はそのファイルにローカル定義してよい。
+Consolidate all types shared across multiple modules in `src/types.ts`. Types used only within a single file may be defined locally in that file.
 
-## エラーハンドリング
+## Error Handling
 
-`catch` ブロックの例外変数は `_e` ではなく省略形 `catch` を使うか、Biome が許容する形にする。ただし例外内容を使う場合は型付けする。
+In `catch` blocks, use the short-form `catch` (no variable) when the exception is unused, or type the variable when its content is needed — either way must be accepted by Biome.
 
 ```typescript
-// 内容を使わない場合
+// When the exception content is not used
 try { ... } catch { ... }
 
-// 内容を使う場合
+// When the exception content is used
 try { ... } catch (e: unknown) {
   if (e instanceof Error) { ... }
 }
