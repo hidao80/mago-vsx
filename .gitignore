@@ -2,9 +2,12 @@ out
 dist
 node_modules
 .vscode-test/
+.vscode/
 *.vsix
 .DS_Store
-.claude/
+.claude/settings.local.json
+.claude/histories/
+.claude/skills/
 
 # Package manager lock files
 package-lock.json
@@ -12,6 +15,3 @@ yarn.lock
 
 # pnpm
 .pnpm-debug.log
-
-# files
-CLAUDE.md
