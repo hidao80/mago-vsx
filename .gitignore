@@ -8,6 +8,7 @@ node_modules
 .claude/settings.local.json
 .claude/histories/
 .claude/skills/
+.jj/
 
 # Package manager lock files
 package-lock.json
