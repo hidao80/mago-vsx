@@ -119,4 +119,4 @@ Defined in `package.json`:
 | `install:vscode` | Build and install `.vsix` locally |
 | `uninstall:vscode` | `code --uninstall-extension hidao80.mago-vsx` |
 
-<!-- created at d1374d8 -->
+<!-- updated at a4509d9 -->

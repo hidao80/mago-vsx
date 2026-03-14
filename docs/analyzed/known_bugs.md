@@ -2,6 +2,14 @@
 
 ## Active Issues
 
+### ~~3. `severityToVSCode` and `magoLevelToVSCode` are duplicate methods~~ ✅ Fixed
+
+**Location**: `src/magoOutputParser.ts`
+
+**Fix**: `magoLevelToVSCode` を削除し、`parseJsonIssue` 内の呼び出しを `severityToVSCode` に統一。メソッドが1本になり実装の乖離リスクを解消した。
+
+---
+
 ### 1. Duplicate diagnostics on simultaneous lint + analyze (per-file commands)
 
 **Location**: `src/extension.ts` on-save listener; `src/magoRunner.ts` `handleMagoOutput`
@@ -22,14 +30,6 @@
 
 ---
 
-### 3. `severityToVSCode` and `magoLevelToVSCode` are duplicate methods
-
-**Location**: `src/magoOutputParser.ts` lines ~360–395
-
-**Description**: Two private methods implement identical case-insensitive severity mapping. Not a runtime bug, but a maintenance hazard.
-
----
-
 ### ~~4. Diagnostic accumulation when only one of lintOnSave / analyzeOnSave is enabled~~ ✅ Fixed
 
 **Location**: `src/extension.ts` line 201
@@ -38,53 +38,43 @@
 
 ---
 
-### 5. Missing input validation for `baselinePath` user input
+### ~~5. Missing input validation for `baselinePath` user input~~ ✅ Fixed
 
-**Location**: `src/extension.ts` lines 111–124, 133–146 (`generateLintBaseline` / `generateAnalyzeBaseline`)
+**Location**: `src/extension.ts` `generateLintBaseline` / `generateAnalyzeBaseline`
 
-**Description**: `showInputBox` accepts arbitrary user input that is passed directly as a CLI argument to the mago subprocess without any validation or sanitization. On Windows (`shell: true`), a crafted value such as `; rm -rf /` or a path-traversal string such as `../../etc/passwd` could cause unintended behavior.
-
-**Impact**: High — arbitrary input reachable by the user is forwarded to a shell-spawned process.
+**Fix**: `isValidBaselinePath` was added and is called before forwarding user-supplied input to the CLI. Path traversal, absolute paths, and shell metacharacters are all rejected with an error message.
 
 ---
 
-### 6. Shell injection risk via file path on Windows
+### ~~6. Shell injection risk via file path on Windows~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 199–203 (`spawnMago`)
+**Location**: `src/magoRunner.ts` `spawnMago`
 
-**Description**: On Windows, mago is spawned with `shell: true`. All elements of the `args` array — including `fileUri.fsPath` and `baselinePath` — are expanded by the shell. A file path containing shell metacharacters (`&`, `|`, `;`, `%`) could cause unintended commands to run.
-
-**Impact**: High — exploitable only with a crafted workspace file path, but the combination with issue #5 (unvalidated `baselinePath`) makes this reachable.
+**Fix**: `shell: true` was removed from the `child_process.spawn` options. All args are now passed as an array without shell expansion, eliminating the injection surface.
 
 ---
 
-### 7. `workspaceFolder` is not checked for `undefined` in `runMagoCommand`
+### ~~7. `workspaceFolder` is not checked for `undefined` in `runMagoCommand`~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 58–71
+**Location**: `src/magoRunner.ts` `runMagoCommand`
 
-**Description**: `getWorkspaceFolder` may return `undefined` when a file is opened outside any workspace folder. `runMagoProjectCommand` guards against this, but `runMagoCommand` passes the result directly to `spawnMago` without checking. The subprocess starts with `cwd: undefined` (falls back to the process's working directory), which may produce incorrect relative-path resolution.
-
-**Impact**: Medium — only triggered when linting/analyzing files outside the workspace root.
+**Fix**: Added an explicit `undefined` check after `getWorkspaceFolder`. When the file is outside any workspace folder, a warning is logged to the output channel before execution continues. The absolute `fsPath` is still passed as the CLI argument so lint/analyze succeeds; only relative paths (e.g. baseline) may not resolve correctly, which is now clearly surfaced to the user.
 
 ---
 
-### 8. Unhandled Promise from `showErrorMessage` / `showWarningMessage`
+### ~~8. Unhandled Promise from `showErrorMessage` / `showWarningMessage`~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 369–376, 395–399 (`checkForErrors`, `showConfigurationError`)
+**Location**: `src/magoRunner.ts` (`checkForErrors`, `showConfigurationError`)
 
-**Description**: `vscode.window.showErrorMessage(...).then(...)` is not `await`-ed. If the `.then()` callback throws, the error is silently swallowed. The method is synchronous so it cannot `await`, but the floating Promise prevents proper error propagation.
-
-**Impact**: Low — silent failure only on rare secondary errors inside the callback.
+**Fix**: VS Codeの`showErrorMessage`は`Thenable`を返すため`.catch()`は使えない。代わりに`void`キーワードを付与し、浮遊Thenableを明示的に破棄する形に変更した。
 
 ---
 
-### 9. `"ERROR"` string matching in `checkForErrors` is over-broad
+### ~~9. `"ERROR"` string matching in `checkForErrors` is over-broad~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 338–340
+**Location**: `src/magoRunner.ts` `checkForErrors`
 
-**Description**: `output.includes("ERROR")` will match any occurrence of the string, including PHP class names (e.g. `ERROR_CODE`) or legitimate mago output that happens to contain the word. This may suppress valid diagnostics by treating normal output as an error condition.
-
-**Impact**: Medium — false positives possible; actual severity depends on mago's output format.
+**Fix**: Replaced `output.includes("ERROR")` with `/\bERROR\b/.test(output)` and the per-line filter with `/\bERROR\b/.test(line)`. Word-boundary matching prevents false positives from PHP identifiers like `ERROR_CODE`.
 
 ---
 
@@ -98,53 +88,75 @@
 
 ---
 
-### 11. `||` operator causes false fallback when line/column is `0` in `magoOutputParser`
+### ~~11. `||` operator causes false fallback when line/column is `0` in `magoOutputParser`~~ ✅ Fixed
 
-**Location**: `src/magoOutputParser.ts` lines 174–175, 207–210, 292–293
+**Location**: `src/magoOutputParser.ts` `parseJsonIssue` and `jsonToIssue`
 
-**Description**: `(start?.line || 1) - 1` uses `||` which treats `0` as falsy and falls back to `1`. If mago returns `line: 0` or `column: 0`, the calculation silently produces `0` by coincidence, but the intent is wrong. The same pattern appears in `parseLineToIssue`, `parseJsonIssue`, and `jsonToIssue`. The `endColumn` calculation (`(end?.column || (start?.column || 1) + 1) - 1`) is additionally wrong when `end.column` is `0`.
-
-**Impact**: Medium — produces incorrect diagnostics positions for edge-case mago output.
+**Fix**: Replaced all `||` with `??` in line/column default expressions (`(start?.line ?? 1) - 1`, `(start?.column ?? 1) - 1`, etc.) so that the value `0` is treated as a valid position and is no longer overridden by the fallback.
 
 ---
 
-### 12. Double `resolve()` call when child process emits `error` then `close`
+### ~~12. Double `resolve()` call when child process emits `error` then `close`~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 214–221 (`spawnMago`)
+**Location**: `src/magoRunner.ts` `spawnMago`
 
-**Description**: Node.js fires the `error` event followed by the `close` event on process spawn failure. Both handlers call `resolve()`, meaning the Promise resolves twice. The second call is silently ignored by the Promise spec, but the `close` handler returns partially accumulated `stdout`/`stderr` while the `error` handler returns empty strings — the order of resolution is indeterminate.
-
-**Impact**: Low — second resolve is a no-op; no observable data corruption in practice, but the logic is fragile.
+**Fix**: `spawnMago` に `resolved` フラグを追加し、`error` と `close` の両ハンドラーが `resolve()` を呼ぶ前にフラグをチェックするよう変更。最初のハンドラーだけがPromiseを解決し、二重解決を防ぐ。
 
 ---
 
-### 13. `formatOnSave` may trigger lint/analyze twice via re-save event
+### ~~13. `formatOnSave` may trigger lint/analyze twice via re-save event~~ ✅ Fixed
 
-**Location**: `src/extension.ts` lines 196–211 (`onDidSaveTextDocument`)
+**Location**: `src/extension.ts` `onDidSaveTextDocument`
 
-**Description**: `runFormat` invokes mago, which writes the formatted content back to disk. This write causes VS Code to fire `onDidSaveTextDocument` again for the same file. If `lintOnSave` or `analyzeOnSave` is also enabled, lint/analyze runs once from the first save and again from the format-induced re-save, doubling execution and potentially causing stale diagnostics from the pre-format content.
-
-**Impact**: Medium — double execution on save with `formatOnSave` + `lintOnSave`/`analyzeOnSave` enabled simultaneously.
+**Fix**: Added a module-level `formattingUris: Set<string>`. Before calling `runFormat`, the file URI is added to the set. The handler returns early if the URI is already in the set (re-save from format), then removes it in a `finally` block. Lint/analyze now runs only once, on the original user save.
 
 ---
 
-### 14. `isValidBaselinePath` matches `"foo..bar"` as a path-traversal attempt
+### ~~14. `isValidBaselinePath` matches `"foo..bar"` as a path-traversal attempt~~ ✅ Fixed
 
 **Location**: `src/extension.ts` lines 8–26 (`isValidBaselinePath`)
 
-**Description**: The guard uses `path.includes("..")` which matches any occurrence of two consecutive dots, rejecting legitimate file names like `"baseline..backup.toml"`. Conversely, URL-encoded traversal (`%2e%2e`) is not checked. The correct approach is a per-segment check against the normalized path.
-
-**Impact**: Low — false rejection of unusual but valid filenames; encoded traversal is not a practical concern since `shell` is not always true.
+**Fix**: Replaced `path.includes("..")` with a per-segment check (`segments.some(s => s === "..")`), so only path components that are exactly `".."` are rejected. Filenames like `"baseline..backup.toml"` are now accepted correctly.
 
 ---
 
-### 15. `baselinePath` from settings is not validated in normal lint/analyze execution
+### ~~15. `baselinePath` from settings is not validated in normal lint/analyze execution~~ ✅ Fixed
 
-**Location**: `src/magoRunner.ts` lines 184–189 (`buildDiagnosticCommandArgs`)
+**Location**: `src/magoRunner.ts` `buildDiagnosticCommandArgs`
 
-**Description**: `isValidBaselinePath` is called when the user types a baseline path via `showInputBox` (generate commands), but when the stored `mago.lintBaseline` / `mago.analyzeBaseline` setting is read and forwarded to `--baseline`, no validation occurs. A malicious workspace `.vscode/settings.json` could supply a crafted baseline path.
+**Fix**: Added a private `isValidBaselinePath` method to `MagoRunner`. Settings-sourced baseline paths are now validated before being forwarded to `--baseline`. Invalid paths are skipped and logged to the output channel.
 
-**Impact**: Medium — requires a compromised workspace settings file; `spawn` without `shell: true` mitigates injection risk, but path traversal to unintended files remains.
+---
+
+### ~~16. `isValidBaselinePath` is duplicated in `extension.ts` and `magoRunner.ts`~~ ✅ Fixed
+
+**Location**: `src/magoRunner.ts` (now a module-level export); `src/extension.ts`
+
+**Fix**: The private `isValidBaselinePath` method in `MagoRunner` and the standalone function in `extension.ts` were consolidated into a single exported function at the top of `magoRunner.ts`. `extension.ts` now imports it from `./magoRunner`. Bug #17 (`%` gap) was fixed in the same change.
+
+---
+
+### ~~17. `%` character is not blocked by `isValidBaselinePath` metacharacter check~~ ✅ Fixed
+
+**Location**: `src/magoRunner.ts` `isValidBaselinePath` (exported)
+
+**Fix**: Added `%` to the metacharacter regex — now `/[&|;<>$\`!*?()\[\]{}%]/` — as part of the Bug #16 consolidation. Fixes the Windows environment variable expansion gap (`%APPDATA%` etc.).
+
+---
+
+### ~~18. Negative line/column numbers possible when mago returns `line: 0` or `column: 0`~~ ✅ Fixed
+
+**Location**: `src/magoOutputParser.ts` `parseJsonIssue`, `jsonToIssue`, `parseLine`, `parseLineToIssue`
+
+**Fix**: 全4箇所の `- 1` 演算に `Math.max(0, ...)` ガードを追加。JSONパス・テキストパス両方を網羅し、負インデックスを完全に排除した。
+
+---
+
+### ~~19. `issueToDiagnostic` still uses `||` for column fallback~~ ✅ Fixed
+
+**Location**: `src/magoOutputParser.ts` `issueToDiagnostic`
+
+**Fix**: `issue.column || 0` を `issue.column ?? 0` に変更し、`0` を有効な列値として扱うよう統一した。あわせて `parseJsonIssue` の `json.level || "Error"` も `json.level ?? "Error"` に修正。
 
 ---
 
@@ -158,4 +170,4 @@ Core business logic in `MagoRunner` (argument building, TOML error detection, di
 
 The `glob` package used in `src/test/suite/index.ts` is not listed as an explicit `devDependency` — it arrives as a transitive dependency of `@vscode/test-electron`. A version bump could silently break the test runner.
 
-<!-- updated after code-reviewer audit 2026-03-14 -->
+<!-- updated 2026-03-14: bugs #5–#7, #11, #14–#17 fixed; bugs #9, #13 fixed 2026-03-14; bugs #3, #8, #12, #18, #19 fixed 2026-03-14 -->

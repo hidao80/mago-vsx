@@ -42,13 +42,16 @@ A `vscode.OutputChannel` named `"Mago"` logs raw mago subprocess output and pars
 |---|---|---|
 | Issues found | Information | `Mago {cmd}: Found N issue(s) [in M file(s)]` |
 | No issues (project) | Information | `Mago {cmd}: No issues found` |
+| No issues (file) | _(silent)_ | No message shown |
 | Unexpected output | Warning | `Mago {cmd}: Output received but no issues parsed. Check "Mago" output channel.` |
 | Format success | Information | `Mago fmt: [File/Project] formatted successfully` |
 | Format check pass | Information | `Mago fmt --check: All files are correctly formatted` |
 | Format check fail | Warning | `Mago fmt --check: Some files need formatting. …` |
 | Execution error | Error | `Mago {cmd}: Execution error occurred. …` |
-| TOML error | Error | `Mago {cmd}: Configuration error in mago.toml at line X, column Y. …` |
+| TOML error (with location) | Error | `Mago {cmd}: Configuration error in mago.toml at line X, column Y. …` |
+| TOML error (no location) | Error | `Mago {cmd}: Failed to build configuration. …` |
 | No workspace | Error | `No workspace folder open` |
+| Invalid baseline path | Error | `Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.` |
 
 ## Input Box (Baseline Generation)
 
@@ -56,4 +59,6 @@ When `mago.generateLintBaseline` or `mago.generateAnalyzeBaseline` is invoked an
 - Lint default: `lint-baseline.toml`
 - Analyze default: `analysis-baseline.toml`
 
-<!-- created at d1374d8 -->
+The entered path is validated by `isValidBaselinePath` before being forwarded to the runner. Invalid paths (containing `..`, absolute paths, or shell metacharacters) are rejected with an error notification and the command is aborted.
+
+<!-- updated at a4509d9 -->

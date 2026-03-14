@@ -25,15 +25,30 @@ vscode.DiagnosticCollection — Problems pane
 | Export | Behaviour |
 |---|---|
 | `activate(context)` | Creates `DiagnosticCollection("mago")`, `OutputChannel("Mago")`, and a `MagoRunner` instance. Registers all 11 commands. Attaches `onDidSaveTextDocument` listener. |
-| `deactivate()` | Disposes `DiagnosticCollection` and `OutputChannel`. |
+| `deactivate()` | Disposes `DiagnosticCollection` and `OutputChannel`. (`MagoRunner` has no disposable resources.) |
+
+### Helper: `isValidBaselinePath(path: string): boolean`
+
+Module-level validator called before passing user-supplied baseline paths to the runner. Rejects:
+- Empty / falsy strings
+- Path traversal sequences (`..`)
+- Absolute paths (Unix `/…` or Windows `C:\…`)
+- Shell metacharacters: `&`, `|`, `;`, `<`, `>`, `$`, `` ` ``, `!`, `*`, `?`, `()`, `[]`, `{}`
+
+Returns `true` only when the path passes all checks.
 
 ### On-Save Listener
 
-Fires for every saved document. Skips non-PHP files. Reads `lintOnSave`, `analyzeOnSave`, `formatOnSave` from config. Clears the per-file diagnostic entry before running both lint and analyze to prevent duplicates.
+Fires for every saved document. Skips non-PHP files. Reads `lintOnSave`, `analyzeOnSave`, `formatOnSave` from config. Execution order:
+
+1. Run `mago fmt` if `formatOnSave` is true.
+2. Clear the per-file `DiagnosticCollection` entry if `lintOnSave` **or** `analyzeOnSave` is true (prevents accumulation across saves).
+3. Run `mago lint` if `lintOnSave` is true.
+4. Run `mago analyze` if `analyzeOnSave` is true.
 
 ### Commands
 
-See [screens.md](screens.md) for the full command table. Guard: file-scoped commands check `editor.document.languageId === "php"` before delegating to `MagoRunner`.
+See [screens.md](screens.md) for the full command table. Guard: file-scoped commands check `editor.document.languageId === "php"` before delegating to `MagoRunner`. Baseline commands validate the user-supplied path via `isValidBaselinePath` and show an error message if validation fails.
 
 ---
 
@@ -68,11 +83,12 @@ Internally creates a `MagoOutputParser` instance.
 | Method | Description |
 |---|---|
 | `buildDiagnosticCommandArgs(cmd, config)` | Constructs `[cmd, "--reporting-format", "json", ...]` with optional `--baseline` |
-| `spawnMago(args, cwd?)` | Wraps `child_process.spawn`; returns `SpawnResult`. Uses `shell: true` on Windows |
+| `spawnMago(args, cwd?)` | Wraps `child_process.spawn` with `{ cwd }` only (no `shell` option); returns `SpawnResult` |
 | `handleMagoOutput(output, fileUri, cmd)` | Parses single-file output and **merges** into `DiagnosticCollection` |
 | `handleMagoProjectOutput(output, cwd, cmd)` | Parses project output and merges per-file |
-| `checkForErrors(output, cmd)` | Detects `ERROR` / TOML errors; shows appropriate notifications |
+| `checkForErrors(output, cmd)` | Detects `"ERROR"` / TOML errors; shows appropriate notifications |
 | `notifyDiagnosticResult(count, ...)` | Shows info/warning message summarising results |
+| `showConfigurationError(command, details?)` | Shows TOML error dialog; `.then()` callback handles "Show Output" button (Promise not awaited) |
 
 ### Diagnostic Merging
 
@@ -83,7 +99,16 @@ const existing = this.diagnosticCollection.get(fileUri) || [];
 this.diagnosticCollection.set(fileUri, [...existing, ...newDiagnostics]);
 ```
 
-The caller (`extension.ts`) is responsible for clearing before running both commands simultaneously.
+The caller (`extension.ts`) is responsible for clearing before running commands to prevent accumulation.
+
+### Result Notifications
+
+| Condition | File command | Project command |
+|---|---|---|
+| Issues found | Shows count message | Shows count + file count message |
+| No issues, empty output | Silent | Shows "No issues found" |
+| No issues, valid JSON | Silent | Shows "No issues found" |
+| Invalid JSON output | Shows warning | Shows warning |
 
 ---
 
@@ -114,10 +139,11 @@ Supports paths with or without column number.
 
 ### Path Normalisation
 
-1. Strips Windows extended path prefix `\\?\` via `rawPath.replace(/^\\\\\?\\/, "")`
-2. Detects absolute vs relative paths (`path.isAbsolute` or `/^[a-zA-Z]:/` test)
-3. Joins relative paths with `workspaceFolder`
-4. Normalises separators with `path.normalize`
+1. Converts backslashes to forward slashes
+2. Strips Windows extended path prefix `\\?\` via `rawPath.replace(/^\\\\\?\\/, "")`
+3. Detects absolute vs relative paths (`path.isAbsolute` or `/^[a-zA-Z]:/` test)
+4. Joins relative paths with `workspaceFolder`
+5. Normalises separators with `path.normalize`
 
 ### Severity Mapping
 
@@ -129,10 +155,10 @@ Supports paths with or without column number.
 | `hint` / `Hint` | `Hint` (3) |
 | _(unknown)_ | `Error` |
 
-Two private methods exist for the same mapping: `severityToVSCode` (text format) and `magoLevelToVSCode` (JSON format). Both behave identically with a case-insensitive switch.
+Two private methods exist for the same mapping: `severityToVSCode` (text format) and `magoLevelToVSCode` (JSON format). Both behave identically — this is a known maintenance hazard (see known_bugs.md #3).
 
 ### Related Information
 
-Notes (`json.notes[]`) and help text (`json.help`) are attached as `DiagnosticRelatedInformation` entries prefixed with `"Note: "` and `"Help: "` respectively.
+Notes (`json.notes[]`) and help text (`json.help`) are attached as `DiagnosticRelatedInformation` entries prefixed with `"Note: "` and `"Help: "` respectively. All entries reference the same location as the parent diagnostic.
 
-<!-- created at d1374d8 -->
+<!-- updated at a4509d9 -->

@@ -1,4 +1,4 @@
-# Configuration
+# Configurations
 
 All settings live under the `mago` namespace in VS Code's workspace/user settings.
 
@@ -18,11 +18,11 @@ All settings live under the `mago` namespace in VS Code's workspace/user setting
 When a PHP file is saved, the extension executes in this fixed order:
 
 1. `mago fmt` (if `formatOnSave: true`)
-2. Clear `DiagnosticCollection` for that file (only if both `lintOnSave` and `analyzeOnSave` are true)
+2. Clear `DiagnosticCollection` for that file (if `lintOnSave` **or** `analyzeOnSave` is true)
 3. `mago lint` (if `lintOnSave: true`)
 4. `mago analyze` (if `analyzeOnSave: true`)
 
-The pre-clear step (2) prevents duplicate diagnostics when both lint and analyze are active.
+The pre-clear step (2) runs whenever at least one diagnostic command is enabled, ensuring diagnostics never accumulate across repeated saves regardless of which flags are active.
 
 ## CLI Arguments Built from Config
 
@@ -49,8 +49,10 @@ mago fmt --check .         # format check
 mago <command> --generate-baseline --baseline <path> .
 ```
 
+The `<path>` value comes from either the workspace setting or the `showInputBox` prompt. It is validated by `isValidBaselinePath` before use (rejects `..`, absolute paths, and shell metacharacters).
+
 ## mago.toml
 
 The `mago` binary itself reads a `mago.toml` configuration file in the workspace. If the TOML is malformed, the extension detects the `Failed to build the configuration` error in subprocess output and surfaces a TOML parse-error notification with line/column details.
 
-<!-- created at d1374d8 -->
+<!-- updated at a4509d9 -->
