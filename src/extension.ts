@@ -197,8 +197,8 @@ export function activate(context: vscode.ExtensionContext): void {
 				await magoRunner.runFormat(document.uri);
 			}
 
-			// 両方実行する場合は最初に診断をクリア
-			if (lintOnSave && analyzeOnSave) {
+			// 診断を実行する前にクリア（積み上がりを防ぐ）
+			if (lintOnSave || analyzeOnSave) {
 				diagnosticCollection.delete(document.uri);
 			}
 
