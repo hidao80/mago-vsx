@@ -233,6 +233,9 @@ export class MagoRunner {
 
 			let stdout = "";
 			let stderr = "";
+			// Node.js はスポーン失敗時に "error" → "close" の順でイベントを発火する。
+			// 両ハンドラが resolve() を呼ぶと Promise が2回解決されるため guard フラグで防ぐ。
+			let resolved = false;
 
 			childProcess.stdout?.on("data", (data: Buffer) => {
 				stdout += data.toString();
@@ -243,12 +246,18 @@ export class MagoRunner {
 			});
 
 			childProcess.on("close", (exitCode) => {
-				resolve({ stdout, stderr, exitCode });
+				if (!resolved) {
+					resolved = true;
+					resolve({ stdout, stderr, exitCode });
+				}
 			});
 
 			childProcess.on("error", (err: Error) => {
-				vscode.window.showErrorMessage(`Failed to run mago: ${err.message}`);
-				resolve({ stdout: "", stderr: err.message, exitCode: null });
+				if (!resolved) {
+					resolved = true;
+					vscode.window.showErrorMessage(`Failed to run mago: ${err.message}`);
+					resolve({ stdout: "", stderr: err.message, exitCode: null });
+				}
 			});
 		});
 	}
@@ -396,7 +405,8 @@ export class MagoRunner {
 			.split("\n")
 			.filter((line) => /\bERROR\b/.test(line));
 		if (errorLines.length > 0) {
-			vscode.window
+			// void で Thenable を明示的に破棄し、浮遊 Promise 警告を抑制する
+			void vscode.window
 				.showErrorMessage(
 					`Mago ${command}: Execution error occurred. Check "Mago" output for details.`,
 					"Show Output",
@@ -422,11 +432,14 @@ export class MagoRunner {
 			? `Mago ${command}: Configuration error in mago.toml at ${details}. Check "Mago" output for details.`
 			: `Mago ${command}: Failed to build configuration. Check "Mago" output for details.`;
 
-		vscode.window.showErrorMessage(message, "Show Output").then((selection) => {
-			if (selection === "Show Output") {
-				this.outputChannel.show(true);
-			}
-		});
+		// void で Thenable を明示的に破棄し、浮遊 Promise 警告を抑制する
+		void vscode.window
+			.showErrorMessage(message, "Show Output")
+			.then((selection) => {
+				if (selection === "Show Output") {
+					this.outputChannel.show(true);
+				}
+			});
 	}
 
 	private getWorkspaceFolder(fileUri: vscode.Uri): string | undefined {

@@ -129,8 +129,10 @@ export class MagoOutputParser {
 		);
 		if (match) {
 			const [, , lineStr, columnStr, severity, message] = match;
-			const lineNum = Number.parseInt(lineStr, 10) - 1; // VS Codeは0-indexed
-			const column = columnStr ? Number.parseInt(columnStr, 10) - 1 : 0;
+			const lineNum = Math.max(0, Number.parseInt(lineStr, 10) - 1); // VS Codeは0-indexed
+			const column = columnStr
+				? Math.max(0, Number.parseInt(columnStr, 10) - 1)
+				: 0;
 
 			const range = new vscode.Range(lineNum, column, lineNum, column + 1);
 			const diagnostic = new vscode.Diagnostic(
@@ -171,8 +173,8 @@ export class MagoOutputParser {
 
 			return {
 				file: filePath,
-				line: Number.parseInt(lineStr, 10) - 1,
-				column: columnStr ? Number.parseInt(columnStr, 10) - 1 : 0,
+				line: Math.max(0, Number.parseInt(lineStr, 10) - 1),
+				column: columnStr ? Math.max(0, Number.parseInt(columnStr, 10) - 1) : 0,
 				severity,
 				message,
 			};
@@ -204,15 +206,16 @@ export class MagoOutputParser {
 				const start = primaryAnnotation.span.start;
 				const end = primaryAnnotation.span.end;
 
-				lineNum = (start?.line ?? 1) - 1; // VS Codeは0-indexed
-				column = (start?.column ?? 1) - 1;
-				endLine = (end?.line ?? start?.line ?? 1) - 1;
-				endColumn = (end?.column ?? (start?.column ?? 1) + 1) - 1;
+				// Math.max(0, ...) で mago が line/column: 0 を返した場合の負インデックスを防ぐ
+				lineNum = Math.max(0, (start?.line ?? 1) - 1); // VS Codeは0-indexed
+				column = Math.max(0, (start?.column ?? 1) - 1);
+				endLine = Math.max(0, (end?.line ?? start?.line ?? 1) - 1);
+				endColumn = Math.max(0, (end?.column ?? (start?.column ?? 1) + 1) - 1);
 			}
 		} else if (json.line !== undefined) {
 			// フォールバック: 古い形式の場合
-			lineNum = (json.line ?? 1) - 1;
-			column = (json.column ?? 1) - 1;
+			lineNum = Math.max(0, (json.line ?? 1) - 1);
+			column = Math.max(0, (json.column ?? 1) - 1);
 			endLine = lineNum;
 			endColumn = column + 1;
 		}
@@ -223,7 +226,7 @@ export class MagoOutputParser {
 		const diagnostic = new vscode.Diagnostic(
 			range,
 			json.message,
-			this.magoLevelToVSCode(json.level || "Error"),
+			this.severityToVSCode(json.level ?? "Error"),
 		);
 
 		diagnostic.source = "mago";
@@ -289,14 +292,15 @@ export class MagoOutputParser {
 					filePath = this.normalizeFilePath(rawPath, workspaceFolder);
 				}
 
-				lineNum = (start?.line ?? 1) - 1;
-				column = (start?.column ?? 1) - 1;
+				// Math.max(0, ...) で mago が line/column: 0 を返した場合の負インデックスを防ぐ
+				lineNum = Math.max(0, (start?.line ?? 1) - 1);
+				column = Math.max(0, (start?.column ?? 1) - 1);
 			}
 		} else if (json.file) {
 			// フォールバック: 古い形式の場合
 			filePath = this.normalizeFilePath(json.file, workspaceFolder);
-			lineNum = (json.line ?? 1) - 1;
-			column = (json.column ?? 1) - 1;
+			lineNum = Math.max(0, (json.line ?? 1) - 1);
+			column = Math.max(0, (json.column ?? 1) - 1);
 		}
 
 		if (!filePath) {
@@ -336,9 +340,9 @@ export class MagoOutputParser {
 	private issueToDiagnostic(issue: MagoIssue): vscode.Diagnostic {
 		const range = new vscode.Range(
 			issue.line,
-			issue.column || 0,
+			issue.column ?? 0,
 			issue.line,
-			(issue.column || 0) + 1,
+			(issue.column ?? 0) + 1,
 		);
 
 		const diagnostic = new vscode.Diagnostic(
@@ -385,21 +389,6 @@ export class MagoOutputParser {
 
 	private severityToVSCode(severity: string): vscode.DiagnosticSeverity {
 		switch (severity.toLowerCase()) {
-			case "error":
-				return vscode.DiagnosticSeverity.Error;
-			case "warning":
-				return vscode.DiagnosticSeverity.Warning;
-			case "info":
-				return vscode.DiagnosticSeverity.Information;
-			case "hint":
-				return vscode.DiagnosticSeverity.Hint;
-			default:
-				return vscode.DiagnosticSeverity.Error;
-		}
-	}
-
-	private magoLevelToVSCode(level: string): vscode.DiagnosticSeverity {
-		switch (level.toLowerCase()) {
 			case "error":
 				return vscode.DiagnosticSeverity.Error;
 			case "warning":
