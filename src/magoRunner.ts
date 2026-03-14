@@ -64,6 +64,11 @@ export class MagoRunner {
 		args.push(fileUri.fsPath);
 
 		const workspaceFolder = this.getWorkspaceFolder(fileUri);
+		if (!workspaceFolder) {
+			this.outputChannel.appendLine(
+				`[${command}] Warning: File is outside any workspace folder. Relative paths (e.g. baseline) may not resolve correctly.`,
+			);
+		}
 		const result = await this.spawnMago(args, workspaceFolder);
 
 		this.logOutput(command, fileUri.fsPath, result);
@@ -184,11 +189,29 @@ export class MagoRunner {
 		const baselineConfig =
 			command === "lint" ? "lintBaseline" : "analyzeBaseline";
 		const baselinePath = config.get<string>(baselineConfig, "");
-		if (baselinePath) {
+		if (baselinePath && this.isValidBaselinePath(baselinePath)) {
 			args.push("--baseline", baselinePath);
+		} else if (baselinePath) {
+			this.outputChannel.appendLine(
+				`[${command}] Warning: Skipping invalid baseline path from settings: "${baselinePath}"`,
+			);
 		}
 
 		return args;
+	}
+
+	private isValidBaselinePath(inputPath: string): boolean {
+		if (!inputPath) {
+			return false;
+		}
+		if (inputPath.startsWith("/") || /^[a-zA-Z]:\\/.test(inputPath)) {
+			return false;
+		}
+		if (/[&|;<>$`!*?()\[\]{}]/.test(inputPath)) {
+			return false;
+		}
+		const segments = inputPath.split(/[\\/]/);
+		return !segments.some((segment) => segment === "..");
 	}
 
 	private async spawnMago(args: string[], cwd?: string): Promise<SpawnResult> {

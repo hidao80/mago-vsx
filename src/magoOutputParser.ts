@@ -204,15 +204,15 @@ export class MagoOutputParser {
 				const start = primaryAnnotation.span.start;
 				const end = primaryAnnotation.span.end;
 
-				lineNum = (start?.line || 1) - 1; // VS Codeは0-indexed
-				column = (start?.column || 1) - 1;
-				endLine = (end?.line || start?.line || 1) - 1;
-				endColumn = (end?.column || (start?.column || 1) + 1) - 1;
+				lineNum = (start?.line ?? 1) - 1; // VS Codeは0-indexed
+				column = (start?.column ?? 1) - 1;
+				endLine = (end?.line ?? start?.line ?? 1) - 1;
+				endColumn = (end?.column ?? (start?.column ?? 1) + 1) - 1;
 			}
 		} else if (json.line !== undefined) {
 			// フォールバック: 古い形式の場合
-			lineNum = (json.line || 1) - 1;
-			column = (json.column || 1) - 1;
+			lineNum = (json.line ?? 1) - 1;
+			column = (json.column ?? 1) - 1;
 			endLine = lineNum;
 			endColumn = column + 1;
 		}
@@ -289,14 +289,14 @@ export class MagoOutputParser {
 					filePath = this.normalizeFilePath(rawPath, workspaceFolder);
 				}
 
-				lineNum = (start?.line || 1) - 1;
-				column = (start?.column || 1) - 1;
+				lineNum = (start?.line ?? 1) - 1;
+				column = (start?.column ?? 1) - 1;
 			}
 		} else if (json.file) {
 			// フォールバック: 古い形式の場合
 			filePath = this.normalizeFilePath(json.file, workspaceFolder);
-			lineNum = (json.line || 1) - 1;
-			column = (json.column || 1) - 1;
+			lineNum = (json.line ?? 1) - 1;
+			column = (json.column ?? 1) - 1;
 		}
 
 		if (!filePath) {

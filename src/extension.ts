@@ -9,8 +9,10 @@ function isValidBaselinePath(path: string): boolean {
 	if (!path) {
 		return false;
 	}
-	// Reject path traversal
-	if (path.includes("..")) {
+	// Reject path traversal: only reject segments that are exactly ".."
+	// Using includes("..") would falsely reject filenames like "foo..bar"
+	const segments = path.split(/[\\/]/);
+	if (segments.some((segment) => segment === "..")) {
 		return false;
 	}
 	// Reject absolute paths (Windows and Unix-like)
