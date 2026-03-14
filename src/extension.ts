@@ -5,6 +5,26 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 let outputChannel: vscode.OutputChannel;
 let magoRunner: MagoRunner;
 
+function isValidBaselinePath(path: string): boolean {
+	if (!path) {
+		return false;
+	}
+	// Reject path traversal
+	if (path.includes("..")) {
+		return false;
+	}
+	// Reject absolute paths (Windows and Unix-like)
+	if (path.startsWith("/") || /^[a-zA-Z]:\\/.test(path)) {
+		return false;
+	}
+	// Reject shell metacharacters as a precaution
+	// eslint-disable-next-line no-useless-escape
+	if (/[&|;<>$`!*?()\[\]{}]/.test(path)) {
+		return false;
+	}
+	return true;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
 	console.log("Mago extension is now active");
 
@@ -120,7 +140,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 
 			if (baselinePath) {
-				await magoRunner.runGenerateLintBaseline(baselinePath);
+				if (isValidBaselinePath(baselinePath)) {
+					await magoRunner.runGenerateLintBaseline(baselinePath);
+				} else {
+					vscode.window.showErrorMessage(
+						"Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.",
+					);
+				}
 			}
 		}),
 	);
@@ -142,7 +168,13 @@ export function activate(context: vscode.ExtensionContext): void {
 				}
 
 				if (baselinePath) {
-					await magoRunner.runGenerateAnalyzeBaseline(baselinePath);
+					if (isValidBaselinePath(baselinePath)) {
+						await magoRunner.runGenerateAnalyzeBaseline(baselinePath);
+					} else {
+						vscode.window.showErrorMessage(
+							"Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.",
+						);
+					}
 				}
 			},
 		),

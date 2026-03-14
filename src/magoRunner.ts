@@ -198,8 +198,6 @@ export class MagoRunner {
 		return new Promise((resolve) => {
 			const childProcess = child_process.spawn(magoPath, args, {
 				cwd,
-				shell: process.platform === "win32",
-				windowsVerbatimArguments: false,
 			});
 
 			let stdout = "";
