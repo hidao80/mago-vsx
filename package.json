@@ -2,7 +2,7 @@
   "name": "mago-vsx",
   "displayName": "Mago - PHP Static Analysis",
   "description": "PHP static analysis tool integration for VS Code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "hidao80",
   "license": "MIT",
   "icon": "images/icon256.png",

@@ -195,6 +195,14 @@ Please note that this project uses [Takumi Guard](https://github.com/flatt-secur
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
+### 0.3.0
+
+- **Security**: Removed `shell: true` from `child_process.spawn` to eliminate shell injection via file paths
+- **Security**: Added `isValidBaselinePath` validation (path traversal, absolute paths, shell metacharacters including `%`) applied to both user input and settings-sourced baseline paths
+- **Bug Fixes**: Fixed 16 bugs — highlights include double `resolve()` in `spawnMago`, false-positive `ERROR` matching via word-boundary regex, `formatOnSave` double lint via re-entrant save guard, negative line/column indices, and `||` → `??` for zero-value positions
+- **Code Quality**: Added `readonly` fields, `MagoRunner.dispose()`, process timeout in `spawnMago`, consolidated duplicate logic, removed unnecessary `async`, fixed `MagoAnnotation.kind` type
+- **Tests**: Expanded unit test coverage — `buildDiagnosticCommandArgs`, `checkForErrors`, `notifyDiagnosticResult`, `parseProject` edge cases, and `isValidBaselinePath` boundary cases
+
 ### 0.2.0
 
 - **Type Safety**: Introduced `src/types.ts` centralizing all Mago-specific types; replaced `any` with concrete types (`MagoJsonOutput`, `MagoJsonIssue`, etc.)
