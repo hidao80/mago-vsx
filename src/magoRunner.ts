@@ -134,7 +134,7 @@ export class MagoRunner implements vscode.Disposable {
 					? "Mago fmt: Project formatted successfully"
 					: "Mago fmt: File formatted successfully";
 			vscode.window.showInformationMessage(message);
-		} else {
+		} else if (!this.checkForErrors(result.stdout + result.stderr, "fmt")) {
 			vscode.window.showErrorMessage(
 				`Mago fmt: Failed with exit code ${result.exitCode}. Check "Mago" output for details.`,
 			);
@@ -164,7 +164,9 @@ export class MagoRunner implements vscode.Disposable {
 				'Mago fmt --check: Some files need formatting. Check "Mago" output for details.',
 			);
 			this.outputChannel.show(true);
-		} else {
+		} else if (
+			!this.checkForErrors(result.stdout + result.stderr, "fmt --check")
+		) {
 			vscode.window.showErrorMessage(
 				`Mago fmt --check: Failed with exit code ${result.exitCode}. Check "Mago" output for details.`,
 			);
@@ -381,6 +383,32 @@ export class MagoRunner implements vscode.Disposable {
 		// \bERROR\b で単語境界を確認し、PHP クラス名 ERROR_CODE 等での誤検知を防ぐ
 		if (!/\bERROR\b/.test(output)) {
 			return false;
+		}
+
+		// Database access error (os error 5 = Access Denied on Windows)
+		if (output.includes("Failed to load database")) {
+			void vscode.window
+				.showErrorMessage(
+					`Mago ${command}: Database access error. Another process may be locking the database, or permissions are insufficient. Check "Mago" output for details.`,
+					"Show Output",
+				)
+				.then((selection) => {
+					if (selection === "Show Output") {
+						this.outputChannel.show(true);
+					}
+				});
+			this.outputChannel.appendLine("\n⚠️ Database Access Error Detected:");
+			this.outputChannel.appendLine("  mago could not open its database file.");
+			this.outputChannel.appendLine("  Possible causes:");
+			this.outputChannel.appendLine(
+				"    - Another mago process is locking the database",
+			);
+			this.outputChannel.appendLine(
+				"    - Insufficient file system permissions on the database directory",
+			);
+			this.outputChannel.appendLine("    - The database path is read-only");
+			this.outputChannel.appendLine("");
+			return true;
 		}
 
 		// TOML configuration error
