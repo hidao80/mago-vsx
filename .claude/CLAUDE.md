@@ -1,41 +1,66 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to any AI coding Agenet (claude.ai/code/Codex/Gemini/Cursor/Windsurf/Antigravity/and more) when working with code in this repository.
 
 ## Project Overview
 
 VS Code extension that integrates [Mago](https://github.com/carthage-software/mago) (PHP static analysis tool) into VS Code. Provides lint, analyze, format, and baseline operations with full diagnostics integration.
 
+## Rules for AI Codeing Agent
+
+- **Codde style:** @docs/aiagent/rules/code-style.md
+- **Security guidelines:** @docs/aiagent/rules/security.md
+- **Version controll system guidelines:** @docs/aiagent/rules/version-controll-system.md
+
+## Source Code Explained documents
+
+- **Overview:** @docs/analyzed/overview.md
+- **Configurations:**  @docs/analyzed/configurations.md
+- **Databases:**  @docs/analyzed/databases.md
+- **Components:**  @docs/analyzed/components.md
+- **Utitlities:**  @docs/analyzed/utilities.md
+- **Screens:**  @docs/analyzed/screens.md
+- **Known bugs:**  @docs/analyzed/known_bugs.md
+- **Other notes:** @docs/analyzed/notes.md
+- **To-do list:** @docs/analyzed/todo.md
+
+## Subagents
+
+Use the following sub-agents in parallel, if available.
+
+- **Code Review:** `code-reviewer`
+- **Test:** `code-tester`
+
 ## Commands
 
 ```bash
 # Build (compile TypeScript to out/)
-pnpm run compile
+pnpm compile
 
 # Watch mode
-pnpm run watch
+pnpm watch
 
 # Lint with Biome
-pnpm run lint
+pnpm lint
 
 # Lint with auto-fix
-pnpm run lint:fix
+pnpm lint:fix
 
 # Run all tests (requires VS Code environment via @vscode/test-electron)
 pnpm test
 
 # Run unit tests only (no VS Code environment needed)
-pnpm run test:unit
+pnpm test:unit
 
 # Type check without emit
 pnpm exec tsc --noEmit
 
 # Package as .vsix
-pnpm run package
+pnpm package
 
 # Install/uninstall extension locally
-pnpm run install:vscode
-pnpm run uninstall:vscode
+pnpm install:vscode
+pnpm uninstall:vscode
 ```
 
 ## Architecture
@@ -77,7 +102,3 @@ vscode.DiagnosticCollection → Displayed in VS Code Problems pane
 - Linter: Biome (`@biomejs/biome`) — not ESLint/Prettier
 - Configuration keys: `mago.lintOnSave`, `mago.analyzeOnSave`, `mago.formatOnSave`, `mago.lintBaseline`, `mago.analyzeBaseline`, `mago.executablePath`
 - Diagnostic merging: lint and analyze both write into the same `DiagnosticCollection`; when both run on save, the collection entry for that file is cleared once before both commands run to avoid duplicates.
-
-## Action History
-
-Record a summary of all user commands and their results in the project's `.claude/histories/{YYYYMM}.md` file in the following format. Before executing a command, check the most recent history to determine what the user wants to do and then decide on an action.
