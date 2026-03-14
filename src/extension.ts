@@ -1,31 +1,16 @@
 import * as vscode from "vscode";
-import { MagoRunner } from "./magoRunner";
+import { MagoRunner, isValidBaselinePath } from "./magoRunner";
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 let outputChannel: vscode.OutputChannel;
 let magoRunner: MagoRunner;
 
-function isValidBaselinePath(path: string): boolean {
-	if (!path) {
-		return false;
-	}
-	// Reject path traversal: only reject segments that are exactly ".."
-	// Using includes("..") would falsely reject filenames like "foo..bar"
-	const segments = path.split(/[\\/]/);
-	if (segments.some((segment) => segment === "..")) {
-		return false;
-	}
-	// Reject absolute paths (Windows and Unix-like)
-	if (path.startsWith("/") || /^[a-zA-Z]:\\/.test(path)) {
-		return false;
-	}
-	// Reject shell metacharacters as a precaution
-	// eslint-disable-next-line no-useless-escape
-	if (/[&|;<>$`!*?()\[\]{}]/.test(path)) {
-		return false;
-	}
-	return true;
-}
+/**
+ * formatOnSave がファイルを書き戻すと VS Code が onDidSaveTextDocument を
+ * 再発火する。このセットで「フォーマット中の URI」を追跡し、
+ * 再発火分の lint/analyze 二重実行を防ぐ。
+ */
+const formattingUris = new Set<string>();
 
 export function activate(context: vscode.ExtensionContext): void {
 	console.log("Mago extension is now active");
@@ -189,6 +174,13 @@ export function activate(context: vscode.ExtensionContext): void {
 				return;
 			}
 
+			// formatOnSave がファイルを書き戻すと onDidSaveTextDocument が再発火する。
+			// 再発火分をスキップして lint/analyze の二重実行を防ぐ（Bug #13 対策）。
+			const uriKey = document.uri.toString();
+			if (formattingUris.has(uriKey)) {
+				return;
+			}
+
 			const config = vscode.workspace.getConfiguration("mago");
 			const lintOnSave = config.get<boolean>("lintOnSave", true);
 			const analyzeOnSave = config.get<boolean>("analyzeOnSave", true);
@@ -196,7 +188,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			// フォーマットを最初に実行
 			if (formatOnSave) {
-				await magoRunner.runFormat(document.uri);
+				formattingUris.add(uriKey);
+				try {
+					await magoRunner.runFormat(document.uri);
+				} finally {
+					formattingUris.delete(uriKey);
+				}
 			}
 
 			// 診断を実行する前にクリア（積み上がりを防ぐ）

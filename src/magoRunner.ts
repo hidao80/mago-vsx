@@ -3,6 +3,28 @@ import * as vscode from "vscode";
 import { MagoOutputParser } from "./magoOutputParser";
 import type { MagoCommand, SpawnResult } from "./types";
 
+/**
+ * ユーザー・設定由来のベースラインパスを検証する。
+ * パストラバーサル、絶対パス、シェルメタキャラクター（% を含む）を拒否する。
+ * extension.ts とのロジック共有のためモジュールレベルにエクスポートする。
+ */
+export function isValidBaselinePath(inputPath: string): boolean {
+	if (!inputPath) {
+		return false;
+	}
+	// 絶対パスを拒否（Unix / Windows）
+	if (inputPath.startsWith("/") || /^[a-zA-Z]:\\/.test(inputPath)) {
+		return false;
+	}
+	// シェルメタキャラクターを拒否（% を含む: Windows CMD での環境変数展開リスク）
+	if (/[&|;<>$`!*?()\[\]{}%]/.test(inputPath)) {
+		return false;
+	}
+	// ".." セグメントのみ拒否（"foo..bar" のようなファイル名は許可）
+	const segments = inputPath.split(/[\\/]/);
+	return !segments.some((segment) => segment === "..");
+}
+
 export class MagoRunner {
 	private diagnosticCollection: vscode.DiagnosticCollection;
 	private outputParser: MagoOutputParser;
@@ -189,7 +211,7 @@ export class MagoRunner {
 		const baselineConfig =
 			command === "lint" ? "lintBaseline" : "analyzeBaseline";
 		const baselinePath = config.get<string>(baselineConfig, "");
-		if (baselinePath && this.isValidBaselinePath(baselinePath)) {
+		if (baselinePath && isValidBaselinePath(baselinePath)) {
 			args.push("--baseline", baselinePath);
 		} else if (baselinePath) {
 			this.outputChannel.appendLine(
@@ -198,20 +220,6 @@ export class MagoRunner {
 		}
 
 		return args;
-	}
-
-	private isValidBaselinePath(inputPath: string): boolean {
-		if (!inputPath) {
-			return false;
-		}
-		if (inputPath.startsWith("/") || /^[a-zA-Z]:\\/.test(inputPath)) {
-			return false;
-		}
-		if (/[&|;<>$`!*?()\[\]{}]/.test(inputPath)) {
-			return false;
-		}
-		const segments = inputPath.split(/[\\/]/);
-		return !segments.some((segment) => segment === "..");
 	}
 
 	private async spawnMago(args: string[], cwd?: string): Promise<SpawnResult> {
@@ -357,7 +365,8 @@ export class MagoRunner {
 	}
 
 	private checkForErrors(output: string, command: string): boolean {
-		if (!output.includes("ERROR")) {
+		// \bERROR\b で単語境界を確認し、PHP クラス名 ERROR_CODE 等での誤検知を防ぐ
+		if (!/\bERROR\b/.test(output)) {
 			return false;
 		}
 
@@ -385,7 +394,7 @@ export class MagoRunner {
 		// Other errors
 		const errorLines = output
 			.split("\n")
-			.filter((line) => line.includes("ERROR"));
+			.filter((line) => /\bERROR\b/.test(line));
 		if (errorLines.length > 0) {
 			vscode.window
 				.showErrorMessage(
