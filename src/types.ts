@@ -72,7 +72,7 @@ export interface MagoSpan {
 /** A single annotation attached to a Mago issue. */
 export interface MagoAnnotation {
 	/** `"Primary"` marks the main location; `"Secondary"` marks related sites. */
-	kind: "Primary" | "Secondary" | string;
+	kind: "Primary" | "Secondary";
 	span: MagoSpan;
 	/** Optional label displayed next to the span in Mago's own output. */
 	label?: string;

@@ -38,7 +38,7 @@ export class MagoOutputParser {
 				diagnostics.push(diagnostic);
 			}
 			return diagnostics;
-		} catch (e) {
+		} catch {
 			// JSON形式でない場合は行ごとにパース
 			const lines = output.split("\n");
 			for (const line of lines) {
@@ -83,7 +83,7 @@ export class MagoOutputParser {
 			}
 
 			return diagnosticsByFile;
-		} catch (e) {
+		} catch {
 			// JSON形式でない場合は行ごとにパース
 			const lines = output.split("\n");
 			for (const line of lines) {
@@ -117,7 +117,7 @@ export class MagoOutputParser {
 			try {
 				const json = JSON.parse(line);
 				return this.parseJsonIssue(json, fileUri);
-			} catch (e) {
+			} catch {
 				// JSON形式でない場合は次の処理へ
 			}
 		}
@@ -156,7 +156,7 @@ export class MagoOutputParser {
 			try {
 				const json = JSON.parse(line);
 				return this.jsonToIssue(json, workspaceFolder);
-			} catch (e) {
+			} catch {
 				// JSON形式でない場合は次の処理へ
 			}
 		}
@@ -311,7 +311,7 @@ export class MagoOutputParser {
 			file: filePath,
 			line: lineNum,
 			column,
-			severity: json.level || "Error",
+			severity: json.level ?? "Error",
 			message: json.message,
 			code: json.code,
 			notes: json.notes,

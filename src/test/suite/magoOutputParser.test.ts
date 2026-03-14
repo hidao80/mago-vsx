@@ -309,6 +309,102 @@ test.php:30: info: Info 1`;
 		});
 	});
 
+	suite("parseProject - Edge Cases", () => {
+		test("Should skip issue when annotation has no file_id", () => {
+			const workspaceFolder = "F:\\project";
+			const jsonOutput = JSON.stringify([
+				{
+					level: "Error",
+					message: "No file_id issue",
+					annotations: [
+						{
+							kind: "Primary",
+							span: {
+								// file_id intentionally omitted
+								start: { line: 1, column: 1 },
+							},
+						},
+					],
+				},
+			]);
+
+			const diagnosticsByFile = parser.parseProject(
+				jsonOutput,
+				workspaceFolder,
+			);
+			// file_id がなければ filePath が空になりスキップされる
+			assert.strictEqual(diagnosticsByFile.size, 0);
+		});
+
+		test("Should use first annotation when only Secondary annotations exist", () => {
+			const workspaceFolder = "F:\\project";
+			const jsonOutput = JSON.stringify([
+				{
+					level: "Warning",
+					message: "Secondary-only annotation",
+					annotations: [
+						{
+							kind: "Secondary",
+							span: {
+								file_id: {
+									name: "secondary.php",
+									path: "F:\\project\\secondary.php",
+								},
+								start: { line: 3, column: 2 },
+							},
+						},
+					],
+				},
+			]);
+
+			const diagnosticsByFile = parser.parseProject(
+				jsonOutput,
+				workspaceFolder,
+			);
+			// Primary がなければ annotations[0] をフォールバックとして使う
+			assert.strictEqual(diagnosticsByFile.size, 1);
+			const filePath = Array.from(diagnosticsByFile.keys())[0];
+			assert.ok(filePath.includes("secondary.php"));
+			const diags = diagnosticsByFile.get(filePath);
+			assert.strictEqual(diags?.length, 1);
+			assert.strictEqual(diags?.[0].message, "Secondary-only annotation");
+			assert.strictEqual(diags?.[0].range.start.line, 2); // 0-indexed
+		});
+
+		test("Should join relative paths with workspaceFolder on Windows", () => {
+			const workspaceFolder = "F:\\project";
+			const jsonOutput = JSON.stringify([
+				{
+					level: "Error",
+					message: "Relative path issue",
+					annotations: [
+						{
+							kind: "Primary",
+							span: {
+								file_id: {
+									name: "sub/rel.php",
+									path: "sub/rel.php",
+								},
+								start: { line: 1, column: 1 },
+							},
+						},
+					],
+				},
+			]);
+
+			const diagnosticsByFile = parser.parseProject(
+				jsonOutput,
+				workspaceFolder,
+			);
+			assert.strictEqual(diagnosticsByFile.size, 1);
+			const filePath = Array.from(diagnosticsByFile.keys())[0];
+			assert.ok(
+				filePath.includes("F:\\project") || filePath.includes("F:/project"),
+			);
+			assert.ok(filePath.includes("rel.php"));
+		});
+	});
+
 	suite("Edge Cases", () => {
 		test("Should handle empty output", () => {
 			const fileUri = vscode.Uri.file("F:\\project\\test.php");

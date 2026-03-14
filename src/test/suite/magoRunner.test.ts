@@ -1,6 +1,6 @@
 import * as assert from "node:assert";
 import * as vscode from "vscode";
-import { MagoRunner } from "../../magoRunner";
+import { MagoRunner, isValidBaselinePath } from "../../magoRunner";
 
 suite("MagoRunner Test Suite", () => {
 	let diagnosticCollection: vscode.DiagnosticCollection;
@@ -58,6 +58,165 @@ suite("MagoRunner Test Suite", () => {
 			const config = vscode.workspace.getConfiguration("mago");
 			const analyzeOnSave = config.get<boolean>("analyzeOnSave");
 			assert.strictEqual(typeof analyzeOnSave, "boolean");
+		});
+	});
+
+	suite("buildDiagnosticCommandArgs", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
+		const runner = () => magoRunner as any;
+
+		test("Should include --reporting-format json for lint", () => {
+			const config = vscode.workspace.getConfiguration("mago");
+			const args: string[] = runner().buildDiagnosticCommandArgs(
+				"lint",
+				config,
+			);
+			assert.ok(args.includes("lint"));
+			assert.ok(args.includes("--reporting-format"));
+			assert.ok(args.includes("json"));
+		});
+
+		test("Should include --reporting-format json for analyze", () => {
+			const config = vscode.workspace.getConfiguration("mago");
+			const args: string[] = runner().buildDiagnosticCommandArgs(
+				"analyze",
+				config,
+			);
+			assert.ok(args.includes("analyze"));
+			assert.ok(args.includes("--reporting-format"));
+			assert.ok(args.includes("json"));
+		});
+
+		test("Should not include --baseline when no baseline path is set", () => {
+			const config = vscode.workspace.getConfiguration("mago");
+			const args: string[] = runner().buildDiagnosticCommandArgs(
+				"lint",
+				config,
+			);
+			assert.ok(!args.includes("--baseline"));
+		});
+	});
+
+	suite("checkForErrors", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
+		const runner = () => magoRunner as any;
+
+		test("Should return false for clean output", () => {
+			const result: boolean = runner().checkForErrors(
+				"No issues found",
+				"lint",
+			);
+			assert.strictEqual(result, false);
+		});
+
+		test("Should return false for output containing ERROR in identifier (e.g. PHP_ERROR_CODE)", () => {
+			// \\bERROR\\b のみにマッチするため PHP_ERROR_CODE は誤検知しない
+			const result: boolean = runner().checkForErrors(
+				"class PHP_ERROR_CODE {}",
+				"lint",
+			);
+			assert.strictEqual(result, false);
+		});
+
+		test("Should return true when output contains standalone ERROR", () => {
+			const result: boolean = runner().checkForErrors(
+				"Some output\nERROR: something went wrong\nmore output",
+				"lint",
+			);
+			assert.strictEqual(result, true);
+		});
+
+		test("Should return true and handle TOML configuration error", () => {
+			const tomlOutput =
+				"ERROR Failed to build the configuration\nTOML parse error at line 5, column 10\nsome detail";
+			const result: boolean = runner().checkForErrors(tomlOutput, "lint");
+			assert.strictEqual(result, true);
+		});
+
+		test("Should return true for configuration error without TOML line info", () => {
+			const output =
+				"ERROR Failed to build the configuration\nsome other detail";
+			const result: boolean = runner().checkForErrors(output, "analyze");
+			assert.strictEqual(result, true);
+		});
+	});
+
+	suite("notifyDiagnosticResult", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
+		const runner = () => magoRunner as any;
+
+		test("Should not throw when issueCount > 0 (file mode)", () => {
+			assert.doesNotThrow(() => {
+				runner().notifyDiagnosticResult(3, "{}", "lint", false);
+			});
+		});
+
+		test("Should not throw when issueCount > 0 (project mode)", () => {
+			assert.doesNotThrow(() => {
+				runner().notifyDiagnosticResult(5, "{}", "analyze", true, 2);
+			});
+		});
+
+		test("Should not throw when issueCount is 0 with valid JSON output (project)", () => {
+			assert.doesNotThrow(() => {
+				runner().notifyDiagnosticResult(0, "[]", "lint", true);
+			});
+		});
+
+		test("Should not throw when issueCount is 0 with empty output (file)", () => {
+			assert.doesNotThrow(() => {
+				runner().notifyDiagnosticResult(0, "", "lint", false);
+			});
+		});
+
+		test("Should not throw when issueCount is 0 with invalid JSON output", () => {
+			assert.doesNotThrow(() => {
+				runner().notifyDiagnosticResult(
+					0,
+					"unexpected non-json output",
+					"lint",
+					false,
+				);
+			});
+		});
+	});
+
+	suite("isValidBaselinePath", () => {
+		test("Should accept valid relative path", () => {
+			assert.strictEqual(isValidBaselinePath("baseline.toml"), true);
+			assert.strictEqual(isValidBaselinePath("baselines/lint.toml"), true);
+			assert.strictEqual(isValidBaselinePath("foo..bar.toml"), true); // not a traversal segment
+		});
+
+		test("Should reject empty string", () => {
+			assert.strictEqual(isValidBaselinePath(""), false);
+		});
+
+		test("Should reject path traversal with ..", () => {
+			assert.strictEqual(isValidBaselinePath("../evil.toml"), false);
+			assert.strictEqual(isValidBaselinePath("foo/../../etc/passwd"), false);
+		});
+
+		test("Should reject absolute Unix path", () => {
+			assert.strictEqual(isValidBaselinePath("/etc/passwd"), false);
+		});
+
+		test("Should reject absolute Windows path", () => {
+			assert.strictEqual(isValidBaselinePath("C:\\baseline.toml"), false);
+		});
+
+		test("Should reject shell metacharacters", () => {
+			assert.strictEqual(isValidBaselinePath("base&line.toml"), false);
+			assert.strictEqual(isValidBaselinePath("base|line.toml"), false);
+			assert.strictEqual(isValidBaselinePath("base;line.toml"), false);
+			assert.strictEqual(isValidBaselinePath("base$line.toml"), false);
+		});
+
+		test("Should reject Windows environment variable expansion (%)", () => {
+			assert.strictEqual(
+				isValidBaselinePath("%APPDATA%\\baseline.toml"),
+				false,
+			);
 		});
 	});
 

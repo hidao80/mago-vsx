@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { MagoRunner, isValidBaselinePath } from "./magoRunner";
 
-let diagnosticCollection: vscode.DiagnosticCollection;
-let outputChannel: vscode.OutputChannel;
-let magoRunner: MagoRunner;
+let diagnosticCollection: vscode.DiagnosticCollection | undefined;
+let outputChannel: vscode.OutputChannel | undefined;
+let magoRunner: MagoRunner | undefined;
 
 /**
  * formatOnSave がファイルを書き戻すと VS Code が onDidSaveTextDocument を
@@ -13,22 +13,23 @@ let magoRunner: MagoRunner;
 const formattingUris = new Set<string>();
 
 export function activate(context: vscode.ExtensionContext): void {
-	console.log("Mago extension is now active");
-
 	diagnosticCollection = vscode.languages.createDiagnosticCollection("mago");
 	context.subscriptions.push(diagnosticCollection);
 
 	outputChannel = vscode.window.createOutputChannel("Mago");
 	context.subscriptions.push(outputChannel);
 
+	outputChannel.appendLine("Mago extension is now active");
+
 	magoRunner = new MagoRunner(diagnosticCollection, outputChannel);
+	context.subscriptions.push(magoRunner);
 
 	// コマンド登録
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.lintCurrentFile", async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === "php") {
-				await magoRunner.runLint(editor.document.uri);
+				await magoRunner?.runLint(editor.document.uri);
 			} else {
 				vscode.window.showWarningMessage("Please open a PHP file to lint.");
 			}
@@ -39,7 +40,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand("mago.analyzeCurrentFile", async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === "php") {
-				await magoRunner.runAnalyze(editor.document.uri);
+				await magoRunner?.runAnalyze(editor.document.uri);
 			} else {
 				vscode.window.showWarningMessage("Please open a PHP file to analyze.");
 			}
@@ -48,13 +49,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.lintProject", async () => {
-			await magoRunner.runLintProject();
+			await magoRunner?.runLintProject();
 		}),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.analyzeProject", async () => {
-			await magoRunner.runAnalyzeProject();
+			await magoRunner?.runAnalyzeProject();
 		}),
 	);
 
@@ -66,9 +67,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				const editor = vscode.window.activeTextEditor;
 				if (editor && editor.document.languageId === "php") {
 					// 既存の診断をクリアしてから両方実行
-					diagnosticCollection.delete(editor.document.uri);
-					await magoRunner.runLint(editor.document.uri);
-					await magoRunner.runAnalyze(editor.document.uri);
+					diagnosticCollection?.delete(editor.document.uri);
+					await magoRunner?.runLint(editor.document.uri);
+					await magoRunner?.runAnalyze(editor.document.uri);
 				} else {
 					vscode.window.showWarningMessage(
 						"Please open a PHP file to lint and analyze.",
@@ -81,9 +82,9 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.lintAndAnalyzeProject", async () => {
 			// 既存の診断をクリアしてから両方実行
-			diagnosticCollection.clear();
-			await magoRunner.runLintProject();
-			await magoRunner.runAnalyzeProject();
+			diagnosticCollection?.clear();
+			await magoRunner?.runLintProject();
+			await magoRunner?.runAnalyzeProject();
 		}),
 	);
 
@@ -92,7 +93,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand("mago.formatCurrentFile", async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (editor && editor.document.languageId === "php") {
-				await magoRunner.runFormat(editor.document.uri);
+				await magoRunner?.runFormat(editor.document.uri);
 			} else {
 				vscode.window.showWarningMessage("Please open a PHP file to format.");
 			}
@@ -101,13 +102,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.formatProject", async () => {
-			await magoRunner.runFormatProject();
+			await magoRunner?.runFormatProject();
 		}),
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.formatCheck", async () => {
-			await magoRunner.runFormatCheck();
+			await magoRunner?.runFormatCheck();
 		}),
 	);
 
@@ -128,7 +129,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			if (baselinePath) {
 				if (isValidBaselinePath(baselinePath)) {
-					await magoRunner.runGenerateLintBaseline(baselinePath);
+					await magoRunner?.runGenerateLintBaseline(baselinePath);
 				} else {
 					vscode.window.showErrorMessage(
 						"Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.",
@@ -156,7 +157,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 				if (baselinePath) {
 					if (isValidBaselinePath(baselinePath)) {
-						await magoRunner.runGenerateAnalyzeBaseline(baselinePath);
+						await magoRunner?.runGenerateAnalyzeBaseline(baselinePath);
 					} else {
 						vscode.window.showErrorMessage(
 							"Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.",
@@ -190,7 +191,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			if (formatOnSave) {
 				formattingUris.add(uriKey);
 				try {
-					await magoRunner.runFormat(document.uri);
+					await magoRunner?.runFormat(document.uri);
 				} finally {
 					formattingUris.delete(uriKey);
 				}
@@ -198,25 +199,20 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			// 診断を実行する前にクリア（積み上がりを防ぐ）
 			if (lintOnSave || analyzeOnSave) {
-				diagnosticCollection.delete(document.uri);
+				diagnosticCollection?.delete(document.uri);
 			}
 
 			if (lintOnSave) {
-				await magoRunner.runLint(document.uri);
+				await magoRunner?.runLint(document.uri);
 			}
 
 			if (analyzeOnSave) {
-				await magoRunner.runAnalyze(document.uri);
+				await magoRunner?.runAnalyze(document.uri);
 			}
 		}),
 	);
 }
 
 export function deactivate(): void {
-	if (diagnosticCollection) {
-		diagnosticCollection.dispose();
-	}
-	if (outputChannel) {
-		outputChannel.dispose();
-	}
+	// Disposables are cleaned up automatically via context.subscriptions.
 }

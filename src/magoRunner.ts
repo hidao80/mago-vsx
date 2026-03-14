@@ -25,10 +25,10 @@ export function isValidBaselinePath(inputPath: string): boolean {
 	return !segments.some((segment) => segment === "..");
 }
 
-export class MagoRunner {
-	private diagnosticCollection: vscode.DiagnosticCollection;
-	private outputParser: MagoOutputParser;
-	private outputChannel: vscode.OutputChannel;
+export class MagoRunner implements vscode.Disposable {
+	private readonly diagnosticCollection: vscode.DiagnosticCollection;
+	private readonly outputParser: MagoOutputParser;
+	private readonly outputChannel: vscode.OutputChannel;
 
 	constructor(
 		diagnosticCollection: vscode.DiagnosticCollection,
@@ -222,13 +222,14 @@ export class MagoRunner {
 		return args;
 	}
 
-	private async spawnMago(args: string[], cwd?: string): Promise<SpawnResult> {
+	private spawnMago(args: string[], cwd?: string): Promise<SpawnResult> {
 		const config = vscode.workspace.getConfiguration("mago");
 		const magoPath = config.get<string>("executablePath", "mago");
 
 		return new Promise((resolve) => {
 			const childProcess = child_process.spawn(magoPath, args, {
 				cwd,
+				timeout: 60_000,
 			});
 
 			let stdout = "";
@@ -274,6 +275,14 @@ export class MagoRunner {
 		this.outputChannel.appendLine("--- End Output ---\n");
 	}
 
+	private mergeDiagnostics(
+		uri: vscode.Uri,
+		newDiagnostics: vscode.Diagnostic[],
+	): void {
+		const existing = this.diagnosticCollection.get(uri) ?? [];
+		this.diagnosticCollection.set(uri, [...existing, ...newDiagnostics]);
+	}
+
 	private handleMagoOutput(
 		output: string,
 		fileUri: vscode.Uri,
@@ -285,10 +294,7 @@ export class MagoRunner {
 
 		const diagnostics = this.outputParser.parse(output, fileUri);
 		this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostic(s)`);
-
-		const existingDiagnostics = this.diagnosticCollection.get(fileUri) || [];
-		const mergedDiagnostics = [...existingDiagnostics, ...diagnostics];
-		this.diagnosticCollection.set(fileUri, mergedDiagnostics);
+		this.mergeDiagnostics(fileUri, diagnostics);
 
 		this.notifyDiagnosticResult(diagnostics.length, output, command, false);
 	}
@@ -311,9 +317,7 @@ export class MagoRunner {
 		let totalIssues = 0;
 		for (const [filePath, diagnostics] of diagnosticsByFile.entries()) {
 			const uri = vscode.Uri.file(filePath);
-			const existingDiagnostics = this.diagnosticCollection.get(uri) || [];
-			const mergedDiagnostics = [...existingDiagnostics, ...diagnostics];
-			this.diagnosticCollection.set(uri, mergedDiagnostics);
+			this.mergeDiagnostics(uri, diagnostics);
 			totalIssues += diagnostics.length;
 			this.outputChannel.appendLine(
 				`  ${filePath}: ${diagnostics.length} issue(s)`,
@@ -452,5 +456,11 @@ export class MagoRunner {
 		return workspaceFolders && workspaceFolders.length > 0
 			? workspaceFolders[0].uri.fsPath
 			: undefined;
+	}
+
+	dispose(): void {
+		// MagoRunner does not own diagnosticCollection or outputChannel;
+		// they are managed by the extension via context.subscriptions.
+		// This method exists for future-safe cleanup if owned resources are added.
 	}
 }
