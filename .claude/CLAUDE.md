@@ -8,9 +8,9 @@ VS Code extension that integrates [Mago](https://github.com/carthage-software/ma
 
 ## Rules for AI Coding Agent
 
-- **Code style:** @docs/aiagent/rules/code-style.md
-- **Security guidelines:** @docs/aiagent/rules/security.md
-- **Version control system guidelines:** @docs/aiagent/rules/version-controll-system.md
+- **Code style:** @docs/.claude/rules/code-style.md
+- **Security guidelines:** @docs/.claude/rules/security.md
+- **Version control system guidelines:** @docs/.claude/rules/version-controll-system.md
 
 ## Project Docs
 
