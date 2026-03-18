@@ -6,29 +6,23 @@ This file provides guidance to any AI coding agent (claude.ai/code/Codex/Gemini/
 
 VS Code extension that integrates [Mago](https://github.com/carthage-software/mago) (PHP static analysis tool) into VS Code. Provides lint, analyze, format, and baseline operations with full diagnostics integration.
 
-## Rules for AI Coding Agent
+## Workflow
 
-- **Code style:** @docs/.claude/rules/code-style.md
-- **Security guidelines:** @docs/.claude/rules/security.md
-- **Version control system guidelines:** @docs/.claude/rules/version-controll-system.md
+When starting any task, read the files below that are relevant to the task:
 
-## Project Docs
+- Modifying UI components or screens → read `docs/analyzed/components.md`, `docs/analyzed/screens.md`, `docs/.claude/rules/version-controll-system.md`
+- Modifying data persistence → read `docs/analyzed/databases.md`
+- Modifying utilities or helper functions → read `docs/analyzed/utilities.md`
+- Adding new features → read `docs/analyzed/todo.md`, `docs/analyzed/known_bugs.md`, `docs/analyzed/notes.md`, `docs/aiagent/project/vscode-extension-notes.md`
+- Checking build or dev commands → read `docs/aiagent/project/commands.md`
+- Reviewing configuration (Vite, TypeScript, Tailwind, i18n) → read `docs/analyzed/configuration.md`
 
-- **Architecture:** @docs/aiagent/project/architecture.md
-- **Commands:** @docs/aiagent/project/commands.md
-- **VS Code Extension Notes:** @docs/aiagent/project/vscode-extension-notes.md
+## Always-loaded Documents
 
-## Source Code Explained Documents
-
-- **Overview:** @docs/analyzed/overview.md
-- **Configurations:** @docs/analyzed/configurations.md
-- **Databases:** @docs/analyzed/databases.md
-- **Components:** @docs/analyzed/components.md
-- **Utilities:** @docs/analyzed/utilities.md
-- **Screens:** @docs/analyzed/screens.md
-- **Known bugs:** @docs/analyzed/known_bugs.md
-- **Other notes:** @docs/analyzed/notes.md
-- **To-do list:** @docs/analyzed/todo.md
+- @.claude/rules/code-style.md
+- @.claude/rules/security.md
+- @docs/aiagent/project/architecture.md
+- @docs/analyzed/overview.md
 
 ## Subagents
 
