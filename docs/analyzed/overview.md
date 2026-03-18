@@ -1,3 +1,9 @@
+---
+name: analyzed-overview
+description: High-level summary of the repository structure, behavior, and execution flow.
+type: analysis
+---
+
 # Project Overview
 
 ## Summary

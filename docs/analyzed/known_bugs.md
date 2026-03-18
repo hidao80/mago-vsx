@@ -1,3 +1,9 @@
+---
+name: analyzed-known-bugs
+description: Catalog of known bugs, limitations, and currently unresolved behavior.
+type: analysis
+---
+
 # Known Bugs
 
 ## Active Issues

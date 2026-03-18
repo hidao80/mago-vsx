@@ -1,3 +1,9 @@
+---
+name: analyzed-utilities
+description: Summary of utility modules, helper functions, and their responsibilities.
+type: analysis
+---
+
 # Utilities & Types
 
 ## Shared Type Definitions (`src/types.ts`)

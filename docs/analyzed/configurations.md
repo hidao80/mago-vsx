@@ -1,3 +1,9 @@
+---
+name: analyzed-configurations
+description: Explanation of configuration options, defaults, and related behavior in the extension.
+type: analysis
+---
+
 # Configurations
 
 All settings live under the `mago` namespace in VS Code's workspace/user settings.

@@ -1,3 +1,9 @@
+---
+name: analyzed-screens
+description: Overview of user-facing screens, views, or VS Code surfaces used by the extension.
+type: analysis
+---
+
 # Screens / UI Entry Points
 
 This extension has no custom webview or panel UI. All user-facing surfaces are provided by the VS Code API.

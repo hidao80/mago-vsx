@@ -1,3 +1,9 @@
+---
+name: analyzed-components
+description: Detailed explanation of the repository's main components and their responsibilities.
+type: analysis
+---
+
 # Components
 
 ## Architecture Overview

@@ -1,3 +1,9 @@
+---
+name: analyzed-databases
+description: Notes about data storage, persistence, or the absence of database usage in this repository.
+type: analysis
+---
+
 # Databases / Persistence
 
 ## No Persistent Storage

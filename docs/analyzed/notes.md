@@ -1,3 +1,9 @@
+---
+name: analyzed-notes
+description: Supplementary implementation notes, observations, and repository-specific context.
+type: analysis
+---
+
 # Notes & Remarks
 
 Miscellaneous observations about the codebase that do not fit cleanly into other documents.

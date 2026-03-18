@@ -1,3 +1,9 @@
+---
+name: analyzed-todo
+description: List of proposed improvements, follow-up tasks, and future work for the repository.
+type: analysis
+---
+
 # TODO
 
 ## Bug Fixes
