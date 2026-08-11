@@ -5,6 +5,21 @@ All notable changes to the Mago VS Code extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-08-11
+
+### Fixed
+
+- Fixed a Playwright test-collection crash (`TypeError: Cannot read properties of null (reading 'includes')`) that made `audit`/`build`/`lint`/`test` CI workflows fail on every run. The `vscode` module mock previously patched `Module._resolveFilename` to return the non-existent path `"vscode"`, which broke Playwright's TS-transform loader when it probed the resolved path on disk before the `require.cache` lookup kicked in.
+- Replaced the `Module._resolveFilename` patch with a real, npm-resolvable `vscode` package (`src/test/vscode-stub`) wired up via pnpm's `link:` protocol, so `require("vscode")` resolves through Node's normal module resolution instead of fighting Playwright's internal resolver.
+- Fixed `magoOutputParser.unit.test.ts`'s path-traversal clamp test, which hardcoded a POSIX-style `"/project"` prefix — `normalizeFilePath()` runs paths through `node:path`, which rewrites separators per OS, so the test now normalizes its expected root the same way.
+- Fixed `magoRunner.test.ts`'s "Should clear diagnostics" test, which asserted `get()` returns an empty array after `clear()`; `clear()` empties the underlying map entirely, matching real `vscode.DiagnosticCollection` behavior, so `get()` correctly returns `undefined`.
+
+### Tests
+
+- Added `src/test/vscode-stub` — a minimal, real `vscode` package (not a runtime monkey-patch) used as the `vscode` module mock for all Playwright-based unit and suite tests.
+
+---
+
 ## [0.4.0] - 2026-03-21
 
 ### Security
