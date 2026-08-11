@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mago for VS Code — PHP Static Analysis, Right in Your Editor</title>
+<meta name="description" content="Bring Mago's lint, analyze, format, and baseline workflows straight into VS Code. Real-time diagnostics, format-on-save, and baseline support for gradually improving legacy PHP codebases.">
+<meta name="author" content="hidao80">
+
+<!-- Favicon (emoji) -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐘</text></svg>">
+
+<!-- OGP -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mago for VS Code — PHP Static Analysis, Right in Your Editor">
+<meta property="og:description" content="Bring Mago's lint, analyze, format, and baseline workflows straight into VS Code. Real-time diagnostics, format-on-save, and baseline support for gradually improving legacy PHP codebases.">
+<meta property="og:url" content="https://github.com/hidao80/mago-vsx">
+<meta property="og:site_name" content="Mago for VS Code">
+<meta property="og:image" content="https://hidao80.github.io/mago-vsx/icon256.png">
+<meta property="og:locale" content="en_US">
+
+<!-- X.com (Twitter) Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mago for VS Code — PHP Static Analysis, Right in Your Editor">
+<meta name="twitter:description" content="Bring Mago's lint, analyze, format, and baseline workflows straight into VS Code. Real-time diagnostics, format-on-save, and baseline support for gradually improving legacy PHP codebases.">
+<meta name="twitter:image" content="https://hidao80.github.io/mago-vsx/icon256.png">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mago - PHP Static Analysis",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, macOS, Linux",
+  "description": "VS Code extension for integrating the Mago PHP static analysis tool. Provides lint, analyze, format, and baseline operations with full diagnostics integration.",
+  "url": "https://github.com/hidao80/mago-vsx",
+  "image" : "https://hidao80.github.io/mago-vsx/icon256.png",
+  "author": {
+    "@type": "Person",
+    "name": "hidao80",
+    "url": "https://github.com/hidao80"
+  },
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+<style>
+:root{ --pico-font-size: 100%;} .hero{ text-align: center; padding: 3rem 1rem 2rem;} .hero .emoji{ font-size: 4rem; line-height: 1;} .hero p.lead{ font-size: 1.15rem; max-width: 42rem; margin: 1rem auto 2rem; color: var(--pico-muted-color);} .cta-group{ display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;} .badges{ display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0;} .badges img{ height: 20px;} section{ padding: 2.5rem 0;} section h2{ text-align: center; margin-bottom: 2rem;} .features-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;} .feature-card{ background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem;} .feature-card .icon{ font-size: 1.75rem;} .feature-card h3{ margin: 0.5rem 0;} .feature-card p{ color: var(--pico-muted-color); margin: 0;} .commands-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;} .commands-grid table{ margin: 0;} footer{ text-align: center; padding: 2rem 0 3rem; color: var(--pico-muted-color);} footer a{ color: inherit;}
+</style>
+</head>
+<body>
+
+<main class="container">
+
+  <section class="hero">
+    <div class="emoji" role="img" aria-label="Elephant">🐘</div>
+    <h1>Mago for VS Code</h1>
+    <p class="lead">
+      PHP static analysis, right where you write code. Lint, analyze, format, and manage
+      baselines without leaving your editor — powered by <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>.
+    </p>
+    <div class="cta-group">
+      <a role="button" href="https://marketplace.visualstudio.com/items?itemName=hidao80.mago-vsx" target="_blank" rel="noopener">Install from Marketplace</a>
+      <a role="button" class="secondary" href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+    <div class="badges">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
+      <img src="https://github.com/hidao80/mago-vsx/actions/workflows/build.yml/badge.svg" alt="Build status">
+      <img src="https://github.com/hidao80/mago-vsx/actions/workflows/test.yml/badge.svg" alt="Test status">
+      <img src="https://github.com/hidao80/mago-vsx/actions/workflows/lint.yml/badge.svg" alt="Lint status">
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>Features</h2>
+    <div class="features-grid">
+      <article class="feature-card">
+        <div class="icon">🔍</div>
+        <h3>Lint &amp; Analyze</h3>
+        <p>Run Mago's lint and analyze commands on a single file or the whole project, with results reported straight into VS Code.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon">🎨</div>
+        <h3>Format PHP Files</h3>
+        <p>Format your code with Mago's formatter, including optional format-on-save.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon">📐</div>
+        <h3>Baseline Support</h3>
+        <p>Suppress existing issues with baseline files so you can focus on what's new — ideal for legacy codebases.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon">🧩</div>
+        <h3>Problems Pane Integration</h3>
+        <p>All detected issues appear in VS Code's native Problems pane with collapsible details.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon">💾</div>
+        <h3>Auto-run on Save</h3>
+        <p>Automatically lint, analyze, and format files whenever you save, with each behavior independently configurable.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon">⌨️</div>
+        <h3>Command Palette</h3>
+        <p>Access every Mago command directly from VS Code's command palette — no context switching required.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="commands">
+    <h2>Commands</h2>
+    <div class="commands-grid">
+      <div>
+        <h4>Lint &amp; Analyze</h4>
+        <table>
+          <tbody>
+            <tr><td><code>Mago: Lint Current File</code></td></tr>
+            <tr><td><code>Mago: Analyze Current File</code></td></tr>
+            <tr><td><code>Mago: Lint &amp; Analyze Current File</code></td></tr>
+            <tr><td><code>Mago: Lint Project</code></td></tr>
+            <tr><td><code>Mago: Analyze Project</code></td></tr>
+            <tr><td><code>Mago: Lint &amp; Analyze Project</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h4>Format</h4>
+        <table>
+          <tbody>
+            <tr><td><code>Mago: Format Current File</code></td></tr>
+            <tr><td><code>Mago: Format Project</code></td></tr>
+            <tr><td><code>Mago: Format Check (CI)</code></td></tr>
+          </tbody>
+        </table>
+        <h4>Baseline</h4>
+        <table>
+          <tbody>
+            <tr><td><code>Mago: Generate Lint Baseline</code></td></tr>
+            <tr><td><code>Mago: Generate Analyze Baseline</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="get-started">
+    <h2>Get Started</h2>
+    <ol>
+      <li>Install Mago and make sure it's available on your <code>PATH</code> (or set <code>mago.executablePath</code>).</li>
+      <li>Install the extension from the VS Code Marketplace.</li>
+      <li>Open a PHP file — lint and analyze run automatically on save.</li>
+      <li>Check results in the Problems pane (<kbd>View</kbd> → <kbd>Problems</kbd>).</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>
+      MIT Licensed · <a href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://github.com/hidao80/mago-vsx/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a> ·
+      Built on <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>
+    </p>
+  </footer>
+
+</main>
+
+</body>
+</html>

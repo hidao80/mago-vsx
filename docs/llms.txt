@@ -1,0 +1,34 @@
+# Mago for VS Code
+
+> VS Code extension that integrates the [Mago](https://github.com/carthage-software/mago) PHP static analysis tool, providing lint, analyze, format, and baseline operations with full diagnostics integration.
+
+Mago for VS Code brings PHP linting, analysis, formatting, and baseline management directly into the editor. Issues surface in VS Code's native Problems pane, with optional auto-run on save for lint, analyze, and format.
+
+## Docs
+
+- [README](README.md): Feature overview, commands, configuration, and installation instructions.
+- [CHANGELOG](CHANGELOG.md): Full version history.
+- [TESTING](TESTING.md): How to run and write tests for the extension.
+
+## Commands
+
+- `Mago: Lint Current File` / `Mago: Lint Project`: Run Mago's lint checks.
+- `Mago: Analyze Current File` / `Mago: Analyze Project`: Run Mago's static analysis.
+- `Mago: Lint & Analyze Current File` / `Mago: Lint & Analyze Project`: Run both in one pass.
+- `Mago: Format Current File` / `Mago: Format Project`: Format PHP code with Mago's formatter.
+- `Mago: Format Check (CI)`: Verify formatting without modifying files.
+- `Mago: Generate Lint Baseline` / `Mago: Generate Analyze Baseline`: Create baseline files to suppress existing issues.
+
+## Configuration
+
+- `mago.lintOnSave` (default: `true`): Run lint automatically on file save.
+- `mago.analyzeOnSave` (default: `true`): Run analyze automatically on file save.
+- `mago.formatOnSave` (default: `false`): Format automatically on file save.
+- `mago.lintBaseline`: Path to the lint baseline file.
+- `mago.analyzeBaseline`: Path to the analyze baseline file.
+- `mago.executablePath` (default: `mago`): Path to the Mago executable.
+
+## Optional
+
+- [Repository](https://github.com/hidao80/mago-vsx): Source code, issues, and CI workflows.
+- [Mago](https://github.com/carthage-software/mago): The underlying PHP static analysis tool this extension wraps.
