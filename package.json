@@ -129,6 +129,7 @@
     "@types/vscode": "^1.80.0",
     "@vscode/vsce": "^3.9.2",
     "playwright": "^1.62.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vscode": "link:src/test/vscode-stub"
   }
 }

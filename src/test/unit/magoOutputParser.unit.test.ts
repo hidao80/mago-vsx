@@ -14,6 +14,7 @@
  * Run with: pnpm run test:unit:playwright
  */
 
+import * as path from "node:path";
 import "./setup";
 import { expect, test } from "@playwright/test";
 import { MagoOutputParser } from "../../magoOutputParser";
@@ -782,10 +783,15 @@ test.describe("MagoOutputParser — Pure Unit Tests (vscode mocked)", () => {
 
 			// The file should still be registered (diagnostic is preserved) but the
 			// resolved path must stay within or equal to the workspace root.
+			// normalizeFilePath() runs paths through node:path, which rewrites
+			// separators per-OS (e.g. "/project" -> "\project" on win32), so the
+			// expected root must go through the same normalisation.
 			if (result.size > 0) {
 				const resolvedPath = Array.from(result.keys())[0];
+				const workspaceRoot = path.normalize("/project");
 				expect(
-					resolvedPath.startsWith("/project") || resolvedPath === "/project",
+					resolvedPath.startsWith(workspaceRoot) ||
+						resolvedPath === workspaceRoot,
 				).toBe(true);
 			}
 		});

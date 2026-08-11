@@ -29,6 +29,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vscode:
+        specifier: link:src/test/vscode-stub
+        version: link:src/test/vscode-stub
 
 packages:
 

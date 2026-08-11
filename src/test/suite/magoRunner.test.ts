@@ -375,8 +375,10 @@ test.describe("MagoRunner Test Suite", () => {
 			diagnosticCollection.set(testUri, [diagnostic]);
 			expect(diagnosticCollection.get(testUri)?.length).toBe(1);
 
+			// clear() removes all entries entirely (matches real vscode.DiagnosticCollection),
+			// so get() returns undefined rather than an empty array for a cleared uri.
 			diagnosticCollection.clear();
-			expect(diagnosticCollection.get(testUri)?.length).toBe(0);
+			expect(diagnosticCollection.get(testUri)).toBeUndefined();
 		});
 
 		test("Should set diagnostics for specific file", () => {
