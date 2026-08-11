@@ -121,7 +121,7 @@
     "install:vscode": "pnpm run package && code --install-extension mago-vsx-$(node -p \"require('./package.json').version\").vsix",
     "uninstall:vscode": "code --uninstall-extension hidao80.mago-vsx"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@11.21.0",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@playwright/test": "^1.62.1",
