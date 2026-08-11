@@ -30,37 +30,48 @@ vscode.DiagnosticCollection — Problems pane
 
 | Export | Behaviour |
 |---|---|
-| `activate(context)` | Creates `DiagnosticCollection("mago")`, `OutputChannel("Mago")`, and a `MagoRunner` instance. Registers all 11 commands. Attaches `onDidSaveTextDocument` listener. |
-| `deactivate()` | Disposes `DiagnosticCollection` and `OutputChannel`. (`MagoRunner` has no disposable resources.) |
+| `activate(context)` | Creates `DiagnosticCollection("mago")`, `OutputChannel("Mago")`, and a `MagoRunner` instance. Registers all 11 commands. Attaches `onDidSaveTextDocument` listener. All disposables registered via `context.subscriptions`. |
+| `deactivate()` | Empty body — all disposables are cleaned up automatically via `context.subscriptions`. |
 
-### Helper: `isValidBaselinePath(path: string): boolean`
+### Imports
 
-Module-level validator called before passing user-supplied baseline paths to the runner. Rejects:
-- Empty / falsy strings
-- Path traversal sequences (`..`)
-- Absolute paths (Unix `/…` or Windows `C:\…`)
-- Shell metacharacters: `&`, `|`, `;`, `<`, `>`, `$`, `` ` ``, `!`, `*`, `?`, `()`, `[]`, `{}`
+`isValidBaselinePath` is **imported** from `./magoRunner` (not defined locally). `extension.ts` defines no validation logic of its own.
 
-Returns `true` only when the path passes all checks.
+### Module-level State
+
+```typescript
+const formattingUris = new Set<string>();
+```
+
+Used to guard against re-entrant `onDidSaveTextDocument` fires triggered by `formatOnSave` write-backs (fix for Bug #13).
 
 ### On-Save Listener
 
-Fires for every saved document. Skips non-PHP files. Reads `lintOnSave`, `analyzeOnSave`, `formatOnSave` from config. Execution order:
+Fires for every saved document. Skips non-PHP files. Uses `formattingUris` to skip the re-fire caused by format writing. Reads `lintOnSave`, `analyzeOnSave`, `formatOnSave` from config. Execution order:
 
-1. Run `mago fmt` if `formatOnSave` is true.
-2. Clear the per-file `DiagnosticCollection` entry if `lintOnSave` **or** `analyzeOnSave` is true (prevents accumulation across saves).
+1. Run `mago fmt` if `formatOnSave` is true (with `formattingUris` guard).
+2. Clear the per-file `DiagnosticCollection` entry if `lintOnSave` **or** `analyzeOnSave` is true.
 3. Run `mago lint` if `lintOnSave` is true.
 4. Run `mago analyze` if `analyzeOnSave` is true.
 
 ### Commands
 
-See [screens.md](screens.md) for the full command table. Guard: file-scoped commands check `editor.document.languageId === "php"` before delegating to `MagoRunner`. Baseline commands validate the user-supplied path via `isValidBaselinePath` and show an error message if validation fails.
+See [screens.md](screens.md) for the full command table. Guard: file-scoped commands check `editor.document.languageId === "php"` before delegating to `MagoRunner`. Baseline commands validate the user-supplied path via `isValidBaselinePath` (imported from `./magoRunner`) and show an error message if validation fails.
 
 ---
 
 ## MagoRunner (`src/magoRunner.ts`)
 
-**Role**: Spawns the `mago` subprocess and maps results into the shared `DiagnosticCollection`.
+**Role**: Spawns the `mago` subprocess and maps results into the shared `DiagnosticCollection`. Implements `vscode.Disposable`.
+
+### Module-level Exports
+
+In addition to the class, `magoRunner.ts` exports two validator functions:
+
+| Function | Description |
+|---|---|
+| `isValidBaselinePath(inputPath)` | Validates baseline file paths; rejects `..` segments, absolute paths, and shell metacharacters including `%`. Imported by `extension.ts`. |
+| `isValidExecutablePath(executablePath)` | Validates the `mago.executablePath` setting; rejects shell metacharacters. Called inside `spawnMago` before every spawn. |
 
 ### Constructor
 
@@ -68,7 +79,7 @@ See [screens.md](screens.md) for the full command table. Guard: file-scoped comm
 new MagoRunner(diagnosticCollection: vscode.DiagnosticCollection, outputChannel: vscode.OutputChannel)
 ```
 
-Internally creates a `MagoOutputParser` instance.
+Internally creates a `MagoOutputParser` instance. All three fields are `private readonly`.
 
 ### Public API
 
@@ -83,29 +94,49 @@ Internally creates a `MagoOutputParser` instance.
 | `runFormatCheck()` | Dry-run format check (`fmt --check .`) |
 | `runGenerateLintBaseline(path)` | Generate lint baseline at the given path |
 | `runGenerateAnalyzeBaseline(path)` | Generate analyze baseline at the given path |
+| `dispose()` | No-op; exists for future-safe cleanup via `vscode.Disposable` |
 
 ### Key Private Methods
 
 | Method | Description |
 |---|---|
+| `runMagoCommand(cmd, fileUri)` | Single-file diagnostic command; checks workspace folder |
+| `runMagoProjectCommand(cmd)` | Project-wide diagnostic command; guards against missing workspace |
+| `runFormatCommand(target, fileUri?)` | Format a file or project |
+| `runFormatCheckCommand()` | Format check (CI mode) |
+| `runGenerateBaselineCommand(cmd, path)` | Baseline generation |
 | `buildDiagnosticCommandArgs(cmd, config)` | Constructs `[cmd, "--reporting-format", "json", ...]` with optional `--baseline` |
-| `spawnMago(args, cwd?)` | Wraps `child_process.spawn` with `{ cwd }` only (no `shell` option); returns `SpawnResult` |
-| `handleMagoOutput(output, fileUri, cmd)` | Parses single-file output and **merges** into `DiagnosticCollection` |
+| `spawnMago(args, cwd?)` | Wraps `child_process.spawn`; validates executable path, applies 60 s timeout, `shell: process.platform === "win32"` |
+| `logOutput(output, cmd)` | Appends raw output to the output channel |
+| `mergeDiagnostics(fileUri, newDiagnostics)` | Appends new diagnostics to existing collection entry |
+| `handleMagoOutput(output, fileUri, cmd)` | Parses single-file output and merges into `DiagnosticCollection` |
 | `handleMagoProjectOutput(output, cwd, cmd)` | Parses project output and merges per-file |
-| `checkForErrors(output, cmd)` | Detects `"ERROR"` / TOML errors; shows appropriate notifications |
+| `checkForErrors(output, cmd)` | Dispatches to `handleDatabaseError`, `handleTomlError`, `handleGenericError` in order |
+| `handleDatabaseError(stderr, cmd)` | Detects `"Failed to load database"` in stderr; shows database-access error notification |
+| `handleTomlError(stderr, cmd)` | Detects `"Failed to build the configuration"` in stderr; shows TOML parse error notification |
+| `handleGenericError(stderr, cmd)` | Detects `\bERROR\b` lines in stderr; shows generic execution error notification |
 | `notifyDiagnosticResult(count, ...)` | Shows info/warning message summarising results |
-| `showConfigurationError(command, details?)` | Shows TOML error dialog; `.then()` callback handles "Show Output" button (Promise not awaited) |
+| `showConfigurationError(command, details?)` | Shows TOML error dialog; `void` keyword suppresses floating Thenable warning |
+| `getWorkspaceFolder(fileUri)` | Returns workspace folder URI for a file |
+| `getFirstWorkspaceFolder()` | Returns first workspace folder URI |
 
 ### Diagnostic Merging
 
-Both `runLint` and `runAnalyze` **merge** (append) into existing entries:
+`mergeDiagnostics` always **appends** into existing entries:
 
 ```typescript
-const existing = this.diagnosticCollection.get(fileUri) || [];
+const existing = this.diagnosticCollection.get(fileUri) ?? [];
 this.diagnosticCollection.set(fileUri, [...existing, ...newDiagnostics]);
 ```
 
 The caller (`extension.ts`) is responsible for clearing before running commands to prevent accumulation.
+
+### spawnMago Notes
+
+- Validates `mago.executablePath` via `isValidExecutablePath` before spawning; returns early with an error notification if invalid.
+- Applies a 60-second `timeout` option to prevent indefinite hangs.
+- Uses `shell: process.platform === "win32"` (conditionally enabled on Windows for PATH resolution).
+- A `resolved` flag prevents double-resolution when both `error` and `close` events fire.
 
 ### Result Notifications
 
@@ -146,7 +177,7 @@ Supports paths with or without column number.
 ### Path Normalisation
 
 1. Converts backslashes to forward slashes
-2. Strips Windows extended path prefix `\\?\` via `rawPath.replace(/^\\\\\?\\/, "")`
+2. Strips Windows extended path prefix `\\?\` via `rawPath.replace(/^\\\\\\?\\/, "")`
 3. Detects absolute vs relative paths (`path.isAbsolute` or `/^[a-zA-Z]:/` test)
 4. Joins relative paths with `workspaceFolder`
 5. Normalises separators with `path.normalize`
@@ -161,10 +192,14 @@ Supports paths with or without column number.
 | `hint` / `Hint` | `Hint` (3) |
 | _(unknown)_ | `Error` |
 
-Two private methods exist for the same mapping: `severityToVSCode` (text format) and `magoLevelToVSCode` (JSON format). Both behave identically — this is a known maintenance hazard (see known_bugs.md #3).
+A single `severityToVSCode` method handles both text and JSON severity strings (case-insensitive). The previously duplicate `magoLevelToVSCode` has been removed (Bug #3 fixed).
 
 ### Related Information
 
 Notes (`json.notes[]`) and help text (`json.help`) are attached as `DiagnosticRelatedInformation` entries prefixed with `"Note: "` and `"Help: "` respectively. All entries reference the same location as the parent diagnostic.
 
-<!-- updated at a4509d9 -->
+### Span End Positions
+
+When JSON output includes end positions in the annotation span, they are used to create a precise `Range`. End line/column are stored in `MagoIssue.endLine` and `MagoIssue.endColumn` (both 0-indexed) and applied in `issueToDiagnostic`.
+
+<!-- updated at d40c941 -->

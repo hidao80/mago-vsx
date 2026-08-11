@@ -5,6 +5,64 @@ All notable changes to the Mago VS Code extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-21
+
+### Security
+
+- Added `isValidExecutablePath` validation — `mago.executablePath` setting is now checked for shell metacharacters before spawning, preventing command injection via `cmd.exe` on Windows
+- Consolidated `qs` pnpm overrides: two prior range rules (`qs@<6.14.1` and `qs@>=6.7.0 <=6.14.1`) merged into a single `qs@<6.14.2: >=6.14.2` pin — forces all transitive dependents to the minimum safe version of qs (prototype-pollution fix)
+
+### Fixed
+
+- `runFormat` now resolves the workspace folder from the file URI (`getWorkspaceFolder`) instead of always using the first workspace folder, so single-file formatting no longer silently fails in multi-root or file-only workspaces
+- `checkForErrors` and `handleGenericError` now use case-insensitive matching (`/\bERROR\b/i`) to catch `error:` and `Error:` output from future mago versions
+
+### Changed
+
+- `normalizeJsonToArray` now filters non-object array elements with a type guard instead of unsafe `as` casts
+- Extracted `addDiagnosticForFile` helper to eliminate duplicated map-insertion logic in `parseProject`
+- `install:vscode` script now resolves the version dynamically from `package.json` instead of a hardcoded string
+
+### Tests
+
+- Added `tsconfig.test.json` — test files are now type-checked separately from the production build; `pretest` enforces this on every `pnpm test` run
+- Removed redundant `typeof method === "function"` assertions (TypeScript guarantees these at compile time)
+
+### Docs
+
+- Translated `TESTING.md` from Japanese to English; added architecture table and script reference
+
+---
+
+## [0.3.0] - 2024-12-29
+
+### Security
+
+- Added `isValidBaselinePath` validation — rejects path traversal, absolute paths, and shell metacharacters (including `%`) for both user input and settings-sourced baseline paths
+
+### Fixed
+
+- Fixed 16 bugs — highlights: double `resolve()` in `spawnMago`, false-positive `ERROR` matching via word-boundary regex, `formatOnSave` double lint via re-entrant save guard, negative line/column indices, `||` → `??` for zero-value positions
+
+### Changed
+
+- Added `readonly` fields, `MagoRunner.dispose()`, process timeout in `spawnMago`, consolidated duplicate logic, removed unnecessary `async`, fixed `MagoAnnotation.kind` type
+
+### Tests
+
+- Expanded unit test coverage — `buildDiagnosticCommandArgs`, `checkForErrors`, `notifyDiagnosticResult`, `parseProject` edge cases, and `isValidBaselinePath` boundary cases
+
+---
+
+## [0.2.0] - 2024-12-29
+
+### Changed
+
+- Introduced `src/types.ts` centralizing all Mago-specific types; replaced `any` with concrete types (`MagoJsonOutput`, `MagoJsonIssue`, etc.)
+- Fixed all lint errors — replaced `forEach` with `for...of` loops and removed non-null assertions
+
+---
+
 ## [0.1.0] - 2024-12-29
 
 ### Added

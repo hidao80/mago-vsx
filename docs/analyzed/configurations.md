@@ -61,4 +61,4 @@ The `<path>` value comes from either the workspace setting or the `showInputBox`
 
 The `mago` binary itself reads a `mago.toml` configuration file in the workspace. If the TOML is malformed, the extension detects the `Failed to build the configuration` error in subprocess output and surfaces a TOML parse-error notification with line/column details.
 
-<!-- updated at a4509d9 -->
+<!-- updated at d40c941 -->

@@ -31,7 +31,7 @@ Guard condition: file-scoped commands show a warning message if the active edito
 ## Problems Pane
 
 Diagnostics are pushed to a single `vscode.DiagnosticCollection` named `"mago"` and appear in VS Code's built-in Problems pane. Each diagnostic includes:
-- Range (line/column, 0-indexed internally)
+- Range (line/column, 0-indexed internally; end position included when available from JSON span)
 - Severity (Error / Warning / Information / Hint)
 - Message
 - Source: `"mago"`
@@ -54,10 +54,12 @@ A `vscode.OutputChannel` named `"Mago"` logs raw mago subprocess output and pars
 | Format check pass | Information | `Mago fmt --check: All files are correctly formatted` |
 | Format check fail | Warning | `Mago fmt --check: Some files need formatting. …` |
 | Execution error | Error | `Mago {cmd}: Execution error occurred. …` |
+| Database access error | Error | `Mago {cmd}: Database access error. Another process may be locking the database, or permissions are insufficient. …` |
 | TOML error (with location) | Error | `Mago {cmd}: Configuration error in mago.toml at line X, column Y. …` |
 | TOML error (no location) | Error | `Mago {cmd}: Failed to build configuration. …` |
 | No workspace | Error | `No workspace folder open` |
 | Invalid baseline path | Error | `Invalid baseline path. Check for path traversal ('..'), absolute paths, or special characters.` |
+| Invalid executable path | Error | `Mago: Invalid executablePath setting "…". Path must not contain shell metacharacters.` |
 
 ## Input Box (Baseline Generation)
 
@@ -67,4 +69,4 @@ When `mago.generateLintBaseline` or `mago.generateAnalyzeBaseline` is invoked an
 
 The entered path is validated by `isValidBaselinePath` before being forwarded to the runner. Invalid paths (containing `..`, absolute paths, or shell metacharacters) are rejected with an error notification and the command is aborted.
 
-<!-- updated at a4509d9 -->
+<!-- updated at d40c941 -->

@@ -1,17 +1,23 @@
 import * as vscode from "vscode";
 import { MagoRunner, isValidBaselinePath } from "./magoRunner";
 
+/** VS Code diagnostic collection that owns all Mago-reported diagnostics. Initialised in {@link activate}. */
 let diagnosticCollection: vscode.DiagnosticCollection | undefined;
+/** Output channel used for extension log messages and mago stdout/stderr. Initialised in {@link activate}. */
 let outputChannel: vscode.OutputChannel | undefined;
+/** Singleton runner that spawns mago child processes and converts results to diagnostics. Initialised in {@link activate}. */
 let magoRunner: MagoRunner | undefined;
 
-/**
- * formatOnSave がファイルを書き戻すと VS Code が onDidSaveTextDocument を
- * 再発火する。このセットで「フォーマット中の URI」を追跡し、
- * 再発火分の lint/analyze 二重実行を防ぐ。
- */
-const formattingUris = new Set<string>();
 
+/**
+ * Called by VS Code when the extension is activated.
+ * Registers all commands, the on-save listener, and creates the
+ * DiagnosticCollection and OutputChannel owned by this extension.
+ *
+ * @param context - The extension context provided by VS Code, used to register
+ *   disposables that are automatically cleaned up on deactivation.
+ * @returns void
+ */
 export function activate(context: vscode.ExtensionContext): void {
 	diagnosticCollection = vscode.languages.createDiagnosticCollection("mago");
 	context.subscriptions.push(diagnosticCollection);
@@ -24,7 +30,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	magoRunner = new MagoRunner(diagnosticCollection, outputChannel);
 	context.subscriptions.push(magoRunner);
 
-	// コマンド登録
+	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.lintCurrentFile", async () => {
 			const editor = vscode.window.activeTextEditor;
@@ -59,15 +65,16 @@ export function activate(context: vscode.ExtensionContext): void {
 		}),
 	);
 
-	// Lint & Analyze 両方実行
+	// Run both Lint & Analyze
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			"mago.lintAndAnalyzeCurrentFile",
 			async () => {
 				const editor = vscode.window.activeTextEditor;
 				if (editor && editor.document.languageId === "php") {
-					// 既存の診断をクリアしてから両方実行
+					// Clear existing diagnoses before performing both.
 					diagnosticCollection?.delete(editor.document.uri);
+					// By making execution sequential, race conditions are suppressed.
 					await magoRunner?.runLint(editor.document.uri);
 					await magoRunner?.runAnalyze(editor.document.uri);
 				} else {
@@ -81,7 +88,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mago.lintAndAnalyzeProject", async () => {
-			// 既存の診断をクリアしてから両方実行
+			// Clear existing diagnostics before running both
 			diagnosticCollection?.clear();
 			await magoRunner?.runLintProject();
 			await magoRunner?.runAnalyzeProject();
@@ -168,17 +175,17 @@ export function activate(context: vscode.ExtensionContext): void {
 		),
 	);
 
-	// ファイル保存時の自動実行
+	// Auto-run on file save
 	context.subscriptions.push(
 		vscode.workspace.onDidSaveTextDocument(async (document) => {
 			if (document.languageId !== "php") {
 				return;
 			}
 
-			// formatOnSave がファイルを書き戻すと onDidSaveTextDocument が再発火する。
-			// 再発火分をスキップして lint/analyze の二重実行を防ぐ（Bug #13 対策）。
+			// When formatOnSave writes the file back, onDidSaveTextDocument re-fires.
+			// Skip the re-fire to prevent duplicate lint/analyze runs (fix for Bug #13).
 			const uriKey = document.uri.toString();
-			if (formattingUris.has(uriKey)) {
+			if (magoRunner?.isFormatting(uriKey)) {
 				return;
 			}
 
@@ -187,17 +194,12 @@ export function activate(context: vscode.ExtensionContext): void {
 			const analyzeOnSave = config.get<boolean>("analyzeOnSave", true);
 			const formatOnSave = config.get<boolean>("formatOnSave", false);
 
-			// フォーマットを最初に実行
+			// Run format first
 			if (formatOnSave) {
-				formattingUris.add(uriKey);
-				try {
-					await magoRunner?.runFormat(document.uri);
-				} finally {
-					formattingUris.delete(uriKey);
-				}
+				await magoRunner?.runFormatOnSave(document.uri);
 			}
 
-			// 診断を実行する前にクリア（積み上がりを防ぐ）
+			// Clear diagnostics before running to prevent accumulation
 			if (lintOnSave || analyzeOnSave) {
 				diagnosticCollection?.delete(document.uri);
 			}
@@ -213,6 +215,12 @@ export function activate(context: vscode.ExtensionContext): void {
 	);
 }
 
+/**
+ * Called by VS Code when the extension is deactivated.
+ * All disposables are cleaned up automatically via context.subscriptions.
+ *
+ * @returns void
+ */
 export function deactivate(): void {
 	// Disposables are cleaned up automatically via context.subscriptions.
 }

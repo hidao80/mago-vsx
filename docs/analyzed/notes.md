@@ -10,21 +10,26 @@ Miscellaneous observations about the codebase that do not fit cleanly into other
 
 ## Code Quality Observations
 
-### Duplicate Severity Mapping Methods
+### `shell` Option Conditionally Re-enabled on Windows
 
-`MagoOutputParser` contains two private methods — `severityToVSCode` and `magoLevelToVSCode` — that implement identical case-insensitive severity-to-`DiagnosticSeverity` mapping. They differ only in name and call site:
-- `severityToVSCode` is used by the text-format path (`parseLine`, `issueToDiagnostic`)
-- `magoLevelToVSCode` is used by the JSON-format path (`parseJsonIssue`)
+`spawnMago` uses `shell: process.platform === "win32"`. An earlier version used `shell: true` unconditionally (a security risk); it was removed, then re-introduced conditionally for Windows to resolve PATH resolution issues with the mago binary. On non-Windows platforms `shell` remains `false`. This means Windows users have a narrower shell-injection surface than before but it is not completely eliminated — mitigation relies on `isValidExecutablePath` and `isValidBaselinePath` rejecting metacharacters.
 
-Neither has been removed or consolidated. See known_bugs.md #3.
+### `checkForErrors` Refactored into Three Methods
 
-### Unused `catch` Variable
+The former single `checkForErrors` method now dispatches to three private helpers in priority order:
+1. `handleDatabaseError` — detects `"Failed to load database"` in stderr
+2. `handleTomlError` — detects `"Failed to build the configuration"` in stderr
+3. `handleGenericError` — detects word-boundary `\bERROR\b` lines in stderr
 
-All four `catch (e)` blocks in `magoOutputParser.ts` capture the exception into `e` but never reference it. The blocks are intentional graceful-degradation fallbacks (JSON parse failure → fall back to text parsing). The variable should be removed: use `catch { }` (ES2019+) or `catch (_)` to silence strict-mode warnings.
+Each returns `true` if it handled the error so subsequent handlers are skipped.
 
-### Floating Promise in `showConfigurationError`
+### `isValidBaselinePath` Consolidated in `magoRunner.ts`
 
-`vscode.window.showErrorMessage(...).then(...)` inside `showConfigurationError` and the `checkForErrors` "other errors" branch is not awaited. The `.then()` callback handles the "Show Output" button click. If the callback throws, the error is silently dropped. The method cannot easily be made `async` without refactoring callers, but a `.catch(() => {})` guard would prevent silent failures.
+`isValidBaselinePath` is a single exported function at module level in `magoRunner.ts`. `extension.ts` imports it from there. A companion `isValidExecutablePath` function was added to validate the `mago.executablePath` setting before each spawn.
+
+### `magoRunner` Not Explicitly Pushed to `context.subscriptions`
+
+`MagoRunner` implements `vscode.Disposable` with a no-op `dispose()`. However, in the current `activate()` implementation the `magoRunner` instance is not pushed to `context.subscriptions` — `deactivate()` is empty and relies on VS Code's automatic cleanup. Since `dispose()` is currently a no-op this causes no runtime leak, but if owned resources are added in the future they will not be released on deactivation unless the subscription registration is also added.
 
 ### File-Level Commands: Silent on No Issues
 
@@ -32,17 +37,21 @@ When a single-file lint or analyze command finds zero issues, no notification is
 
 ## Test Observations
 
-### MagoRunner Tests Test the API, Not the Logic
+### Test Runner Migrated to Playwright
 
-The `magoRunner.test.ts` suite verifies that `DiagnosticCollection` and `OutputChannel` behave as expected VS Code APIs, and that `MagoRunner` can be instantiated. The actual command-building, subprocess-spawning, output-handling, and diagnostic-merging logic has no dedicated unit tests. See known_bugs.md "Remarks from Test Code".
+The test infrastructure was migrated from `@vscode/test-electron` + Mocha TDD to **Playwright**. The new `playwright.config.ts` discovers `**/*.test.ts` and `**/*.unit.test.ts` files under `src/test/`. A `setup.ts` file in `src/test/unit/` registers a VS Code API mock so unit tests run without a real VS Code host.
 
-### Integration Suite Runs on Linux Only
+### MagoRunner Tests Cover Business Logic
 
-CI test jobs run on `ubuntu-latest` with `xvfb`. Windows path handling (e.g. `\\?\` prefix stripping, drive-letter detection) is covered only by unit tests in `magoOutputParser.test.ts`, not by end-to-end tests.
+`magoRunner.test.ts` now includes direct unit tests for `buildDiagnosticCommandArgs`, `mergeDiagnostics`, `checkForErrors`, and `notifyDiagnosticResult`. These tests use the VS Code mock provided by `setup.ts` rather than a real VS Code instance.
 
-### `**/**.test.js` Glob Pattern
+### `isValidBaselinePath` Boundary Tests
 
-The Mocha test runner in `src/test/suite/index.ts` uses `**/**.test.js` to discover tests. The double-star `**/**` is redundant (equivalent to `**/*.test.js`) but harmless in practice.
+`src/test/unit/isValidBaselinePath.test.ts` covers path traversal (`../evil`), absolute paths, shell metacharacters (`&`, `|`, `;`, `$`, `>`, `<`, `` ` ``, `!`, `*`, `?`, `()`, `[]`, `{}`), Windows environment variable expansion (`%APPDATA%`), false-positive prevention (`foo..bar` must pass), and valid relative paths.
+
+### Integration Suite on Linux with xvfb
+
+CI test jobs run on `ubuntu-latest` with `xvfb-run -a`. Windows path handling is covered by unit tests in `magoOutputParser.unit.test.ts`, not by end-to-end tests running on real Windows.
 
 ## Architecture Decisions
 
@@ -50,12 +59,8 @@ The Mocha test runner in `src/test/suite/index.ts` uses `**/**.test.js` to disco
 
 `handleMagoOutput` and `handleMagoProjectOutput` always **merge** (append) into the existing `DiagnosticCollection` rather than replacing. The responsibility for clearing before a multi-command sequence is delegated to the caller (`extension.ts`). This design allows lint and analyze results to coexist without either command needing to know about the other.
 
-### No Shell Option in `spawnMago`
+### `workspaceFolder` Guard in `runMagoCommand`
 
-`child_process.spawn` is called with only `{ cwd }` — no `shell` option. This avoids shell metacharacter expansion and is safe as long as args are passed as an array (which they are). An earlier version reportedly used `shell: true` on Windows; this has been removed.
+`runMagoCommand` checks for `undefined` workspace folder. When the file is outside any workspace folder, a warning is logged to the output channel before execution continues. The absolute `fsPath` is still passed as the CLI argument so lint/analyze succeeds; only relative paths (e.g. baseline) may not resolve correctly.
 
-### `workspaceFolder` Is Optional in `runMagoCommand`
-
-`runMagoCommand` (single-file commands) passes `getWorkspaceFolder(fileUri)` directly to `spawnMago` without checking for `undefined`. When a file is outside any workspace folder, `cwd` will be `undefined` and Node.js will default to the process working directory. This differs from `runMagoProjectCommand`, which explicitly guards against missing workspace folders.
-
-<!-- created at a4509d9 -->
+<!-- created at a4509d9 — updated at d40c941 -->

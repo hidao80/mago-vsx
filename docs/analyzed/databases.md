@@ -28,4 +28,4 @@ The only runtime state is held in two VS Code API objects, both disposed on deac
 
 When the user runs `mago.generateLintBaseline` or `mago.generateAnalyzeBaseline`, the `mago` binary itself writes a TOML file at the specified path. The extension only invokes the subprocess — it does not read or write the file directly.
 
-<!-- updated at a4509d9 -->
+<!-- updated at d40c941 -->

@@ -1,35 +1,100 @@
-import * as child_process from "node:child_process";
 import * as vscode from "vscode";
+import { checkForErrors } from "./magoErrorHandler";
+import { logMagoOutput, spawnMagoProcess } from "./magoSpawner";
 import { MagoOutputParser } from "./magoOutputParser";
 import type { MagoCommand, SpawnResult } from "./types";
 
 /**
- * ユーザー・設定由来のベースラインパスを検証する。
- * パストラバーサル、絶対パス、シェルメタキャラクター（% を含む）を拒否する。
- * extension.ts とのロジック共有のためモジュールレベルにエクスポートする。
+ * Validates the mago executable path from user settings.
+ * Rejects shell metacharacters as a defence-in-depth measure even when shell: false is used.
+ *
+ * Absolute paths are intentionally permitted so users can specify custom mago installations
+ * (e.g., "/usr/local/bin/mago", "C:\\tools\\mago.exe").  Unlike baseline paths, the
+ * executable path must be user-configurable across a wide range of environments, so
+ * restricting it to relative paths would break valid setups.
+ *
+ * Security note: VS Code workspace settings (.vscode/settings.json) can override user
+ * settings, which means a malicious repository could attempt to redirect the executable
+ * path to an arbitrary binary.  This risk is inherent to any extension that executes
+ * user-configured commands; users should only open repositories they trust.
+ * See: https://code.visualstudio.com/docs/editor/workspace-trust
+ *
+ * @param executablePath - The executable path string to validate (from VS Code settings).
+ * @returns `true` if the path is safe to pass to child_process.spawn, `false` otherwise.
+ */
+export function isValidExecutablePath(executablePath: string): boolean {
+	if (!executablePath) {
+		return false;
+	}
+	// Reject shell metacharacters that enable command injection via cmd.exe on Windows.
+	// * is included for consistency with isValidBaselinePath and to prevent glob expansion.
+	if (/[&|;<>$`!*?()\[\]{}%]/.test(executablePath)) {
+		return false;
+	}
+	// Reject path traversal segments (consistent with isValidBaselinePath)
+	const segments = executablePath.split(/[\\/]/);
+	if (segments.some((s) => s === "..")) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Validates a baseline path from user settings or configuration.
+ * Rejects path traversal, absolute paths, and shell metacharacters (including %).
+ * Exported at module level so that extension.ts can share the same validation logic.
+ * @param inputPath - The baseline path string to validate (from VS Code settings).
+ * @returns `true` if the path is safe to use as a mago `--baseline` argument, `false` otherwise.
  */
 export function isValidBaselinePath(inputPath: string): boolean {
 	if (!inputPath) {
 		return false;
 	}
-	// 絶対パスを拒否（Unix / Windows）
-	if (inputPath.startsWith("/") || /^[a-zA-Z]:\\/.test(inputPath)) {
+	// Reject absolute paths (Unix, Windows drive-letter, and Windows UNC \\server\share)
+	if (
+		inputPath.startsWith("/") ||
+		/^[a-zA-Z]:\\/.test(inputPath) ||
+		inputPath.startsWith("\\\\")
+	) {
 		return false;
 	}
-	// シェルメタキャラクターを拒否（% を含む: Windows CMD での環境変数展開リスク）
+	// Reject shell metacharacters (including %: risk of environment variable expansion in Windows CMD)
 	if (/[&|;<>$`!*?()\[\]{}%]/.test(inputPath)) {
 		return false;
 	}
-	// ".." セグメントのみ拒否（"foo..bar" のようなファイル名は許可）
+	// Reject "." (current directory) — not a valid baseline file path
+	if (inputPath === ".") {
+		return false;
+	}
+	// Reject only ".." path segments (filenames like "foo..bar" are allowed)
 	const segments = inputPath.split(/[\\/]/);
 	return !segments.some((segment) => segment === "..");
 }
 
+/**
+ * Orchestrates mago CLI invocations and translates their output into
+ * VS Code diagnostics.  Each public method corresponds to a user-facing
+ * command registered in `extension.ts`.
+ */
 export class MagoRunner implements vscode.Disposable {
+	/** VS Code diagnostic collection that receives parsed mago issues. */
 	private readonly diagnosticCollection: vscode.DiagnosticCollection;
+	/** Parser that converts raw mago stdout into {@link vscode.Diagnostic} objects. */
 	private readonly outputParser: MagoOutputParser;
+	/** Output channel used to display raw mago command output and log messages. */
 	private readonly outputChannel: vscode.OutputChannel;
+	/**
+	 * Tracks URI keys of files currently being formatted via {@link runFormatOnSave}.
+	 * Prevents the re-fired onDidSaveTextDocument event (caused by the format write-back)
+	 * from triggering a duplicate lint/analyze run.
+	 */
+	private readonly formattingUris = new Set<string>();
 
+	/**
+	 * Creates a new MagoRunner.
+	 * @param diagnosticCollection - VS Code collection that receives mago diagnostics.
+	 * @param outputChannel - Output channel for raw mago command output and log messages.
+	 */
 	constructor(
 		diagnosticCollection: vscode.DiagnosticCollection,
 		outputChannel: vscode.OutputChannel,
@@ -40,43 +105,120 @@ export class MagoRunner implements vscode.Disposable {
 	}
 
 	// Public API methods
+
+	/**
+	 * Run mago lint on a single file and update diagnostics.
+	 * @param fileUri - URI of the PHP file to lint.
+	 * @returns A promise that resolves when the lint operation is complete.
+	 */
 	async runLint(fileUri: vscode.Uri): Promise<void> {
 		await this.runMagoCommand("lint", fileUri);
 	}
 
+	/**
+	 * Run mago analyze on a single file and update diagnostics.
+	 * @param fileUri - URI of the PHP file to analyze.
+	 * @returns A promise that resolves when the analyze operation is complete.
+	 */
 	async runAnalyze(fileUri: vscode.Uri): Promise<void> {
 		await this.runMagoCommand("analyze", fileUri);
 	}
 
+	/**
+	 * Run mago lint across the entire workspace and update diagnostics.
+	 * @returns A promise that resolves when the project-wide lint is complete.
+	 */
 	async runLintProject(): Promise<void> {
 		await this.runMagoProjectCommand("lint");
 	}
 
+	/**
+	 * Run mago analyze across the entire workspace and update diagnostics.
+	 * @returns A promise that resolves when the project-wide analyze is complete.
+	 */
 	async runAnalyzeProject(): Promise<void> {
 		await this.runMagoProjectCommand("analyze");
 	}
 
+	/**
+	 * Run mago fmt on a single file.
+	 * @param fileUri - URI of the PHP file to format.
+	 * @returns A promise that resolves when formatting is complete.
+	 */
 	async runFormat(fileUri: vscode.Uri): Promise<void> {
-		await this.runFormatCommand(fileUri.fsPath);
+		await this.runFormatCommand(fileUri.fsPath, fileUri);
 	}
 
+	/**
+	 * Run mago fmt on a single file as part of the on-save workflow.
+	 * Marks the URI as "formatting in progress" for the duration of the call so
+	 * that the re-fired onDidSaveTextDocument event (caused by the format write-back)
+	 * can be detected via {@link isFormatting} and skipped.
+	 * @param fileUri - URI of the PHP file to format.
+	 * @returns A promise that resolves when formatting is complete.
+	 */
+	async runFormatOnSave(fileUri: vscode.Uri): Promise<void> {
+		const uriKey = fileUri.toString();
+		this.formattingUris.add(uriKey);
+		try {
+			await this.runFormatCommand(fileUri.fsPath, fileUri);
+		} finally {
+			this.formattingUris.delete(uriKey);
+		}
+	}
+
+	/**
+	 * Returns `true` if a format-on-save operation is currently in progress for the given URI key.
+	 * Used by the onDidSaveTextDocument handler to suppress duplicate lint/analyze runs.
+	 * @param uriKey - The string form of the file URI (from `vscode.Uri.toString()`).
+	 */
+	isFormatting(uriKey: string): boolean {
+		return this.formattingUris.has(uriKey);
+	}
+
+	/**
+	 * Run mago fmt on the entire workspace.
+	 * @returns A promise that resolves when project-wide formatting is complete.
+	 */
 	async runFormatProject(): Promise<void> {
 		await this.runFormatCommand(".");
 	}
 
+	/**
+	 * Run mago fmt --check on the entire workspace to verify formatting.
+	 * @returns A promise that resolves when the format check is complete.
+	 */
 	async runFormatCheck(): Promise<void> {
 		await this.runFormatCheckCommand();
 	}
 
+	/**
+	 * Generate a lint baseline file at the specified path.
+	 * @param baselinePath - Relative path where the baseline TOML file will be written.
+	 * @returns A promise that resolves when baseline generation is complete.
+	 */
 	async runGenerateLintBaseline(baselinePath: string): Promise<void> {
 		await this.runGenerateBaselineCommand("lint", baselinePath);
 	}
 
+	/**
+	 * Generate an analyze baseline file at the specified path.
+	 * @param baselinePath - Relative path where the baseline TOML file will be written.
+	 * @returns A promise that resolves when baseline generation is complete.
+	 */
 	async runGenerateAnalyzeBaseline(baselinePath: string): Promise<void> {
 		await this.runGenerateBaselineCommand("analyze", baselinePath);
 	}
 
 	// Core command execution methods
+
+	/**
+	 * Run a diagnostic mago command (lint or analyze) on a single file.
+	 * Builds the CLI arguments, spawns mago, and routes the output to handleMagoOutput.
+	 * @param command - The mago sub-command to run (`"lint"` or `"analyze"`).
+	 * @param fileUri - URI of the target PHP file.
+	 * @returns A promise that resolves when the command finishes and diagnostics are updated.
+	 */
 	private async runMagoCommand(
 		command: MagoCommand,
 		fileUri: vscode.Uri,
@@ -87,20 +229,27 @@ export class MagoRunner implements vscode.Disposable {
 
 		const workspaceFolder = this.getWorkspaceFolder(fileUri);
 		if (!workspaceFolder) {
-			this.outputChannel.appendLine(
-				`[${command}] Warning: File is outside any workspace folder. Relative paths (e.g. baseline) may not resolve correctly.`,
-			);
+			const message = `Mago ${command}: File is outside any workspace folder. Open the file's folder in VS Code to enable mago analysis.`;
+			this.outputChannel.appendLine(`[${command}] Error: ${message}`);
+			void vscode.window.showErrorMessage(message);
+			return;
 		}
 		const result = await this.spawnMago(args, workspaceFolder);
 
-		this.logOutput(command, fileUri.fsPath, result);
-		this.handleMagoOutput(result.stdout + result.stderr, fileUri, command);
+		logMagoOutput(command, fileUri.fsPath, result, this.outputChannel);
+		this.handleMagoOutput(result.stdout, result.stderr, fileUri, command);
 	}
 
+	/**
+	 * Run a diagnostic mago command (lint or analyze) on the entire workspace.
+	 * Spawns mago with "." as the target and routes the output to handleMagoProjectOutput.
+	 * @param command - The mago sub-command to run (`"lint"` or `"analyze"`).
+	 * @returns A promise that resolves when the command finishes and diagnostics are updated.
+	 */
 	private async runMagoProjectCommand(command: MagoCommand): Promise<void> {
 		const workspaceFolder = this.getFirstWorkspaceFolder();
 		if (!workspaceFolder) {
-			vscode.window.showErrorMessage("No workspace folder open");
+			void vscode.window.showErrorMessage("No workspace folder open");
 			return;
 		}
 
@@ -110,42 +259,63 @@ export class MagoRunner implements vscode.Disposable {
 
 		const result = await this.spawnMago(args, workspaceFolder);
 
-		this.logOutput(`${command} Project`, workspaceFolder, result);
+		logMagoOutput(`${command} Project`, workspaceFolder, result, this.outputChannel);
 		this.handleMagoProjectOutput(
-			result.stdout + result.stderr,
+			result.stdout,
+			result.stderr,
 			workspaceFolder,
 			command,
 		);
 	}
 
-	private async runFormatCommand(target: string): Promise<void> {
-		const workspaceFolder = this.getFirstWorkspaceFolder();
-		if (!workspaceFolder) {
-			vscode.window.showErrorMessage("No workspace folder open");
-			return;
+	/**
+	 * Run mago fmt on the given target path (file path or ".").
+	 * Shows a success message on exit code 0; delegates error display to checkForErrors otherwise.
+	 * @param target - Filesystem path of the file to format, or `"."` for the entire workspace.
+	 * @returns A promise that resolves when the fmt command is complete.
+	 */
+	private async runFormatCommand(
+		target: string,
+		fileUri?: vscode.Uri,
+	): Promise<void> {
+		let workspaceFolder: string | undefined;
+		if (fileUri) {
+			workspaceFolder =
+				this.getWorkspaceFolder(fileUri) ?? this.getFirstWorkspaceFolder();
+		} else {
+			workspaceFolder = this.getFirstWorkspaceFolder();
+			if (!workspaceFolder) {
+				void vscode.window.showErrorMessage("No workspace folder open");
+				return;
+			}
 		}
 
 		const result = await this.spawnMago(["fmt", target], workspaceFolder);
-		this.logOutput("fmt", target, result);
+		logMagoOutput("fmt", target, result, this.outputChannel);
 
 		if (result.exitCode === 0) {
 			const message =
 				target === "."
 					? "Mago fmt: Project formatted successfully"
 					: "Mago fmt: File formatted successfully";
-			vscode.window.showInformationMessage(message);
-		} else if (!this.checkForErrors(result.stdout + result.stderr, "fmt")) {
-			vscode.window.showErrorMessage(
+			void vscode.window.showInformationMessage(message);
+		} else if (!checkForErrors(result.stderr, "fmt", this.outputChannel)) {
+			void vscode.window.showErrorMessage(
 				`Mago fmt: Failed with exit code ${result.exitCode}. Check "Mago" output for details.`,
 			);
 			this.outputChannel.show(true);
 		}
 	}
 
+	/**
+	 * Run mago fmt --check on the workspace.
+	 * Exit code 0 means all files are formatted; exit code 1 means formatting is needed.
+	 * @returns A promise that resolves when the format-check command is complete.
+	 */
 	private async runFormatCheckCommand(): Promise<void> {
 		const workspaceFolder = this.getFirstWorkspaceFolder();
 		if (!workspaceFolder) {
-			vscode.window.showErrorMessage("No workspace folder open");
+			void vscode.window.showErrorMessage("No workspace folder open");
 			return;
 		}
 
@@ -153,34 +323,37 @@ export class MagoRunner implements vscode.Disposable {
 			["fmt", "--check", "."],
 			workspaceFolder,
 		);
-		this.logOutput("fmt --check", workspaceFolder, result);
+		logMagoOutput("fmt --check", workspaceFolder, result, this.outputChannel);
 
 		if (result.exitCode === 0) {
-			vscode.window.showInformationMessage(
+			void vscode.window.showInformationMessage(
 				"Mago fmt --check: All files are correctly formatted",
 			);
 		} else if (result.exitCode === 1) {
-			vscode.window.showWarningMessage(
+			void vscode.window.showWarningMessage(
 				'Mago fmt --check: Some files need formatting. Check "Mago" output for details.',
 			);
 			this.outputChannel.show(true);
-		} else if (
-			!this.checkForErrors(result.stdout + result.stderr, "fmt --check")
-		) {
-			vscode.window.showErrorMessage(
+		} else if (!checkForErrors(result.stderr, "fmt --check", this.outputChannel)) {
+			void vscode.window.showErrorMessage(
 				`Mago fmt --check: Failed with exit code ${result.exitCode}. Check "Mago" output for details.`,
 			);
 			this.outputChannel.show(true);
 		}
 	}
 
+	/**
+	 * Run a mago diagnostic command with --generate-baseline to create a baseline file.
+	 * @param command - The diagnostic sub-command ("lint" or "analyze").
+	 * @param baselinePath - Relative path for the generated baseline TOML file.
+	 */
 	private async runGenerateBaselineCommand(
 		command: MagoCommand,
 		baselinePath: string,
 	): Promise<void> {
 		const workspaceFolder = this.getFirstWorkspaceFolder();
 		if (!workspaceFolder) {
-			vscode.window.showErrorMessage("No workspace folder open");
+			void vscode.window.showErrorMessage("No workspace folder open");
 			return;
 		}
 
@@ -189,14 +362,14 @@ export class MagoRunner implements vscode.Disposable {
 			workspaceFolder,
 		);
 
-		this.logOutput(`${command} --generate-baseline`, workspaceFolder, result);
+		logMagoOutput(`${command} --generate-baseline`, workspaceFolder, result, this.outputChannel);
 
 		if (result.exitCode === 0) {
-			vscode.window.showInformationMessage(
+			void vscode.window.showInformationMessage(
 				`Mago ${command}: Baseline generated at ${baselinePath}`,
 			);
 		} else {
-			vscode.window.showErrorMessage(
+			void vscode.window.showErrorMessage(
 				`Mago ${command}: Failed to generate baseline. Check "Mago" output for details.`,
 			);
 			this.outputChannel.show(true);
@@ -204,7 +377,16 @@ export class MagoRunner implements vscode.Disposable {
 	}
 
 	// Helper methods
-	private buildDiagnosticCommandArgs(
+
+	/**
+	 * Build the CLI argument list for a diagnostic command.
+	 * Appends --baseline if a valid baseline path is configured for the given command.
+	 * @param command - The mago sub-command (`"lint"` or `"analyze"`).
+	 * @param config - The VS Code workspace configuration for the `mago` namespace.
+	 * @returns An array of CLI arguments ready to pass to {@link spawnMago}.
+	 * @visibleForTesting Exposed as `protected` to allow overriding in {@link TestableMagoRunner}.
+	 */
+	protected buildDiagnosticCommandArgs(
 		command: MagoCommand,
 		config: vscode.WorkspaceConfiguration,
 	): string[] {
@@ -224,60 +406,40 @@ export class MagoRunner implements vscode.Disposable {
 		return args;
 	}
 
+	/**
+	 * Validate the configured executable path and delegate process spawning to
+	 * {@link spawnMagoProcess}.  Resolves with an error result immediately if the
+	 * path is invalid, so callers never need to handle a rejected promise.
+	 * @param args - CLI arguments to pass to the mago executable.
+	 * @param cwd - Optional working directory for the child process.
+	 * @returns A promise that resolves with the collected stdout, stderr, and exit code.
+	 */
 	private spawnMago(args: string[], cwd?: string): Promise<SpawnResult> {
 		const config = vscode.workspace.getConfiguration("mago");
 		const magoPath = config.get<string>("executablePath", "mago");
 
-		return new Promise((resolve) => {
-			const childProcess = child_process.spawn(magoPath, args, {
-				cwd,
-				timeout: 60_000,
+		if (!isValidExecutablePath(magoPath)) {
+			void vscode.window.showErrorMessage(
+				`Mago: Invalid executablePath setting "${magoPath}". Path must not contain shell metacharacters.`,
+			);
+			return Promise.resolve({
+				stdout: "",
+				stderr: "Invalid executable path",
+				exitCode: null,
 			});
+		}
 
-			let stdout = "";
-			let stderr = "";
-			// Node.js はスポーン失敗時に "error" → "close" の順でイベントを発火する。
-			// 両ハンドラが resolve() を呼ぶと Promise が2回解決されるため guard フラグで防ぐ。
-			let resolved = false;
-
-			childProcess.stdout?.on("data", (data: Buffer) => {
-				stdout += data.toString();
-			});
-
-			childProcess.stderr?.on("data", (data: Buffer) => {
-				stderr += data.toString();
-			});
-
-			childProcess.on("close", (exitCode) => {
-				if (!resolved) {
-					resolved = true;
-					resolve({ stdout, stderr, exitCode });
-				}
-			});
-
-			childProcess.on("error", (err: Error) => {
-				if (!resolved) {
-					resolved = true;
-					vscode.window.showErrorMessage(`Failed to run mago: ${err.message}`);
-					resolve({ stdout: "", stderr: err.message, exitCode: null });
-				}
-			});
-		});
+		return spawnMagoProcess(magoPath, args, cwd);
 	}
 
-	private logOutput(
-		command: string,
-		target: string,
-		result: SpawnResult,
-	): void {
-		const output = result.stdout + result.stderr;
-		this.outputChannel.appendLine(`\n[${command}] ${target}`);
-		this.outputChannel.appendLine("--- Raw Output ---");
-		this.outputChannel.appendLine(output);
-		this.outputChannel.appendLine("--- End Output ---\n");
-	}
-
-	private mergeDiagnostics(
+	/**
+	 * Merge new diagnostics into the collection for the given URI,
+	 * preserving any diagnostics already present from a previous command.
+	 * @param uri - The file URI to update.
+	 * @param newDiagnostics - Diagnostics to append to any already stored for `uri`.
+	 * @visibleForTesting Exposed as `protected` to allow overriding in {@link TestableMagoRunner}.
+	 */
+	protected mergeDiagnostics(
 		uri: vscode.Uri,
 		newDiagnostics: vscode.Diagnostic[],
 	): void {
@@ -285,33 +447,57 @@ export class MagoRunner implements vscode.Disposable {
 		this.diagnosticCollection.set(uri, [...existing, ...newDiagnostics]);
 	}
 
+	/**
+	 * Process mago output for a single-file command.
+	 * Checks stderr for errors first; on success, parses diagnostics and merges them.
+	 * @param stdout - Raw stdout from the mago process.
+	 * @param stderr - Raw stderr from the mago process.
+	 * @param fileUri - URI of the file that was analysed.
+	 * @param command - The mago sub-command that was run (used in user-facing messages).
+	 */
 	private handleMagoOutput(
-		output: string,
+		stdout: string,
+		stderr: string,
 		fileUri: vscode.Uri,
-		command: string,
+		command: MagoCommand,
 	): void {
-		if (this.checkForErrors(output, command)) {
+		if (checkForErrors(stderr, command, this.outputChannel)) {
+			// Clear stale diagnostics for this file so previously reported issues
+			// do not persist after the underlying cause is fixed.
+			this.diagnosticCollection.delete(fileUri);
 			return;
 		}
 
-		const diagnostics = this.outputParser.parse(output, fileUri);
+		const diagnostics = this.outputParser.parse(stdout, fileUri);
 		this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostic(s)`);
 		this.mergeDiagnostics(fileUri, diagnostics);
 
-		this.notifyDiagnosticResult(diagnostics.length, output, command, false);
+		this.notifyDiagnosticResult(diagnostics.length, stdout.trim().length > 0, command, false);
 	}
 
+	/**
+	 * Process mago output for a project-wide command.
+	 * Checks stderr for errors first; on success, parses diagnostics grouped by file.
+	 * @param stdout - Raw stdout from the mago process.
+	 * @param stderr - Raw stderr from the mago process.
+	 * @param workspaceFolder - Absolute path of the workspace root used as the mago cwd.
+	 * @param command - The mago sub-command that was run (used in user-facing messages).
+	 */
 	private handleMagoProjectOutput(
-		output: string,
+		stdout: string,
+		stderr: string,
 		workspaceFolder: string,
-		command: string,
+		command: MagoCommand,
 	): void {
-		if (this.checkForErrors(output, command)) {
+		if (checkForErrors(stderr, command, this.outputChannel)) {
+			// Clear all stale diagnostics so previously reported issues do not
+			// persist across a failed project-wide run.
+			this.diagnosticCollection.clear();
 			return;
 		}
 
 		const diagnosticsByFile = this.outputParser.parseProject(
-			output,
+			stdout,
 			workspaceFolder,
 		);
 		this.outputChannel.appendLine(`Parsed ${diagnosticsByFile.size} file(s)`);
@@ -328,17 +514,29 @@ export class MagoRunner implements vscode.Disposable {
 
 		this.notifyDiagnosticResult(
 			totalIssues,
-			output,
+			stdout.trim().length > 0,
 			command,
 			true,
 			diagnosticsByFile.size,
 		);
 	}
 
-	private notifyDiagnosticResult(
+	/**
+	 * Show a VS Code warning or information message summarising the diagnostic result.
+	 * Uses `showWarningMessage` when issues are found so the severity is immediately clear,
+	 * and `showInformationMessage` when the analysis is clean.
+	 * For project commands, includes the file count; skips notification for file commands with no issues.
+	 * @param issueCount - Total number of diagnostics found.
+	 * @param hasOutput - Whether mago produced any stdout (used to suppress notifications on truly empty output).
+	 * @param command - The mago sub-command that was run (used in user-facing messages).
+	 * @param isProject - `true` when the command targeted the whole workspace.
+	 * @param fileCount - Number of files with issues (only meaningful when `isProject` is `true`).
+	 * @visibleForTesting Exposed as `protected` to allow overriding in {@link TestableMagoRunner}.
+	 */
+	protected notifyDiagnosticResult(
 		issueCount: number,
-		output: string,
-		command: string,
+		hasOutput: boolean,
+		command: MagoCommand,
 		isProject: boolean,
 		fileCount?: number,
 	): void {
@@ -347,138 +545,33 @@ export class MagoRunner implements vscode.Disposable {
 				isProject && fileCount !== undefined
 					? `Mago ${command}: Found ${issueCount} issue(s) in ${fileCount} file(s)`
 					: `Mago ${command}: Found ${issueCount} issue(s)`;
-			vscode.window.showInformationMessage(message);
+			void vscode.window.showWarningMessage(message);
 			return;
 		}
 
-		// No issues found - check if output is valid JSON
-		const trimmedOutput = output.trim();
-		if (trimmedOutput.length === 0) {
-			if (isProject) {
-				vscode.window.showInformationMessage(
-					`Mago ${command}: No issues found`,
-				);
-			}
-			return;
-		}
-
-		try {
-			JSON.parse(trimmedOutput);
-			// Valid JSON, no issues - show message only for project-level commands
-			if (isProject) {
-				vscode.window.showInformationMessage(
-					`Mago ${command}: No issues found`,
-				);
-			}
-		} catch {
-			// Invalid JSON - unexpected output
-			vscode.window.showWarningMessage(
-				`Mago ${command}: Output received but no issues parsed. Check "Mago" output channel.`,
-			);
-			this.outputChannel.show(true);
+		// No issues found. For project-level commands always notify; for single-file commands
+		// only notify when mago produced output (i.e. the file was actually analysed).
+		if (isProject || hasOutput) {
+			void vscode.window.showInformationMessage(`Mago ${command}: No issues found`);
 		}
 	}
 
-	private checkForErrors(output: string, command: string): boolean {
-		// \bERROR\b で単語境界を確認し、PHP クラス名 ERROR_CODE 等での誤検知を防ぐ
-		if (!/\bERROR\b/.test(output)) {
-			return false;
-		}
-
-		// Database access error (os error 5 = Access Denied on Windows)
-		if (output.includes("Failed to load database")) {
-			void vscode.window
-				.showErrorMessage(
-					`Mago ${command}: Database access error. Another process may be locking the database, or permissions are insufficient. Check "Mago" output for details.`,
-					"Show Output",
-				)
-				.then((selection) => {
-					if (selection === "Show Output") {
-						this.outputChannel.show(true);
-					}
-				});
-			this.outputChannel.appendLine("\n⚠️ Database Access Error Detected:");
-			this.outputChannel.appendLine("  mago could not open its database file.");
-			this.outputChannel.appendLine("  Possible causes:");
-			this.outputChannel.appendLine(
-				"    - Another mago process is locking the database",
-			);
-			this.outputChannel.appendLine(
-				"    - Insufficient file system permissions on the database directory",
-			);
-			this.outputChannel.appendLine("    - The database path is read-only");
-			this.outputChannel.appendLine("");
-			return true;
-		}
-
-		// TOML configuration error
-		if (output.includes("Failed to build the configuration")) {
-			const tomlErrorMatch = output.match(
-				/TOML parse error at line (\d+), column (\d+)/,
-			);
-			if (tomlErrorMatch) {
-				const [, line, column] = tomlErrorMatch;
-				this.showConfigurationError(command, `line ${line}, column ${column}`);
-				this.outputChannel.appendLine("\n⚠️ Configuration Error Detected");
-				this.outputChannel.appendLine(
-					`TOML parse error at line ${line}, column ${column}`,
-				);
-				this.outputChannel.appendLine("Please check your mago.toml file.\n");
-				return true;
-			}
-
-			this.showConfigurationError(command);
-			this.outputChannel.appendLine("\n⚠️ Configuration Error Detected\n");
-			return true;
-		}
-
-		// Other errors
-		const errorLines = output
-			.split("\n")
-			.filter((line) => /\bERROR\b/.test(line));
-		if (errorLines.length > 0) {
-			// void で Thenable を明示的に破棄し、浮遊 Promise 警告を抑制する
-			void vscode.window
-				.showErrorMessage(
-					`Mago ${command}: Execution error occurred. Check "Mago" output for details.`,
-					"Show Output",
-				)
-				.then((selection) => {
-					if (selection === "Show Output") {
-						this.outputChannel.show(true);
-					}
-				});
-			this.outputChannel.appendLine("\n⚠️ Error Detected:");
-			for (const line of errorLines) {
-				this.outputChannel.appendLine(`  ${line}`);
-			}
-			this.outputChannel.appendLine("");
-			return true;
-		}
-
-		return false;
-	}
-
-	private showConfigurationError(command: string, details?: string): void {
-		const message = details
-			? `Mago ${command}: Configuration error in mago.toml at ${details}. Check "Mago" output for details.`
-			: `Mago ${command}: Failed to build configuration. Check "Mago" output for details.`;
-
-		// void で Thenable を明示的に破棄し、浮遊 Promise 警告を抑制する
-		void vscode.window
-			.showErrorMessage(message, "Show Output")
-			.then((selection) => {
-				if (selection === "Show Output") {
-					this.outputChannel.show(true);
-				}
-			});
-	}
-
+	/**
+	 * Return the filesystem path of the workspace folder that contains the given file URI,
+	 * or undefined if the file is outside all open workspace folders.
+	 * @param fileUri - URI of the file to look up.
+	 * @returns Absolute filesystem path of the containing workspace folder, or `undefined`.
+	 */
 	private getWorkspaceFolder(fileUri: vscode.Uri): string | undefined {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri);
 		return workspaceFolder?.uri.fsPath;
 	}
 
+	/**
+	 * Return the filesystem path of the first open workspace folder,
+	 * or undefined if no workspace is open.
+	 * @returns Absolute filesystem path of `workspaceFolders[0]`, or `undefined`.
+	 */
 	private getFirstWorkspaceFolder(): string | undefined {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		return workspaceFolders && workspaceFolders.length > 0
@@ -486,9 +579,15 @@ export class MagoRunner implements vscode.Disposable {
 			: undefined;
 	}
 
+	/**
+	 * Release any resources owned directly by this MagoRunner instance.
+	 * DiagnosticCollection and OutputChannel are managed by the extension host
+	 * via context.subscriptions and must NOT be disposed here.
+	 * @returns void
+	 */
 	dispose(): void {
-		// MagoRunner does not own diagnosticCollection or outputChannel;
-		// they are managed by the extension via context.subscriptions.
-		// This method exists for future-safe cleanup if owned resources are added.
+		// formattingUris is cleared here so that any in-progress on-save guards
+		// are released if the extension is deactivated mid-format.
+		this.formattingUris.clear();
 	}
 }

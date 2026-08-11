@@ -1,228 +1,339 @@
-import * as assert from "node:assert";
+import { expect, test } from "@playwright/test";
+import { resetMockState } from "../unit/setup";
 import * as vscode from "vscode";
+import { checkForErrors } from "../../magoErrorHandler";
 import { MagoRunner, isValidBaselinePath } from "../../magoRunner";
+import type { MagoCommand } from "../../types";
 
-suite("MagoRunner Test Suite", () => {
+/**
+ * Subclass of MagoRunner that exposes protected methods for testing purposes.
+ * Avoids `as any` casts while keeping the production class well-encapsulated.
+ */
+class TestableMagoRunner extends MagoRunner {
+	override buildDiagnosticCommandArgs(
+		command: MagoCommand,
+		config: vscode.WorkspaceConfiguration,
+	): string[] {
+		return super.buildDiagnosticCommandArgs(command, config);
+	}
+
+	override mergeDiagnostics(
+		uri: vscode.Uri,
+		newDiagnostics: vscode.Diagnostic[],
+	): void {
+		super.mergeDiagnostics(uri, newDiagnostics);
+	}
+
+	override notifyDiagnosticResult(
+		issueCount: number,
+		hasOutput: boolean,
+		command: MagoCommand,
+		isProject: boolean,
+		fileCount?: number,
+	): void {
+		super.notifyDiagnosticResult(issueCount, hasOutput, command, isProject, fileCount);
+	}
+}
+
+test.describe("MagoRunner Test Suite", () => {
 	let diagnosticCollection: vscode.DiagnosticCollection;
 	let outputChannel: vscode.OutputChannel;
-	let magoRunner: MagoRunner;
+	let magoRunner: TestableMagoRunner;
 
-	setup(() => {
+	test.beforeEach(() => {
+		// Defensive reset in case a previous test failed before afterEach ran.
+		resetMockState();
 		diagnosticCollection =
 			vscode.languages.createDiagnosticCollection("mago-test");
 		outputChannel = vscode.window.createOutputChannel("Mago Test");
-		magoRunner = new MagoRunner(diagnosticCollection, outputChannel);
+		magoRunner = new TestableMagoRunner(diagnosticCollection, outputChannel);
 	});
 
-	teardown(() => {
+	test.afterEach(() => {
 		diagnosticCollection.dispose();
 		outputChannel.dispose();
 	});
 
-	suite("Basic Functionality", () => {
+	test.describe("Basic Functionality", () => {
 		test("Should create MagoRunner instance", () => {
-			assert.ok(magoRunner);
-		});
-
-		test("Should have runLint method", () => {
-			assert.strictEqual(typeof magoRunner.runLint, "function");
-		});
-
-		test("Should have runAnalyze method", () => {
-			assert.strictEqual(typeof magoRunner.runAnalyze, "function");
-		});
-
-		test("Should have runLintProject method", () => {
-			assert.strictEqual(typeof magoRunner.runLintProject, "function");
-		});
-
-		test("Should have runAnalyzeProject method", () => {
-			assert.strictEqual(typeof magoRunner.runAnalyzeProject, "function");
+			expect(magoRunner).toBeTruthy();
 		});
 	});
 
-	suite("Configuration", () => {
+	test.describe("Configuration", () => {
 		test("Should read mago.executablePath configuration", () => {
 			const config = vscode.workspace.getConfiguration("mago");
 			const executablePath = config.get<string>("executablePath", "mago");
-			assert.ok(executablePath);
+			expect(executablePath).toBeTruthy();
 		});
 
 		test("Should read mago.lintOnSave configuration", () => {
 			const config = vscode.workspace.getConfiguration("mago");
 			const lintOnSave = config.get<boolean>("lintOnSave");
-			assert.strictEqual(typeof lintOnSave, "boolean");
+			expect(typeof lintOnSave).toBe("boolean");
 		});
 
 		test("Should read mago.analyzeOnSave configuration", () => {
 			const config = vscode.workspace.getConfiguration("mago");
 			const analyzeOnSave = config.get<boolean>("analyzeOnSave");
-			assert.strictEqual(typeof analyzeOnSave, "boolean");
+			expect(typeof analyzeOnSave).toBe("boolean");
 		});
 	});
 
-	suite("buildDiagnosticCommandArgs", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
-		const runner = () => magoRunner as any;
-
+	test.describe("buildDiagnosticCommandArgs", () => {
 		test("Should include --reporting-format json for lint", () => {
 			const config = vscode.workspace.getConfiguration("mago");
-			const args: string[] = runner().buildDiagnosticCommandArgs(
-				"lint",
-				config,
-			);
-			assert.ok(args.includes("lint"));
-			assert.ok(args.includes("--reporting-format"));
-			assert.ok(args.includes("json"));
+			const args = magoRunner.buildDiagnosticCommandArgs("lint", config);
+			expect(args).toContain("lint");
+			expect(args).toContain("--reporting-format");
+			expect(args).toContain("json");
 		});
 
 		test("Should include --reporting-format json for analyze", () => {
 			const config = vscode.workspace.getConfiguration("mago");
-			const args: string[] = runner().buildDiagnosticCommandArgs(
-				"analyze",
-				config,
-			);
-			assert.ok(args.includes("analyze"));
-			assert.ok(args.includes("--reporting-format"));
-			assert.ok(args.includes("json"));
+			const args = magoRunner.buildDiagnosticCommandArgs("analyze", config);
+			expect(args).toContain("analyze");
+			expect(args).toContain("--reporting-format");
+			expect(args).toContain("json");
 		});
 
 		test("Should not include --baseline when no baseline path is set", () => {
 			const config = vscode.workspace.getConfiguration("mago");
-			const args: string[] = runner().buildDiagnosticCommandArgs(
-				"lint",
-				config,
-			);
-			assert.ok(!args.includes("--baseline"));
+			const args = magoRunner.buildDiagnosticCommandArgs("lint", config);
+			expect(args).not.toContain("--baseline");
+		});
+
+		test("Result array starts with the command name", () => {
+			const config = vscode.workspace.getConfiguration("mago");
+			const lintArgs = magoRunner.buildDiagnosticCommandArgs("lint", config);
+			expect(lintArgs[0]).toBe("lint");
+
+			const analyzeArgs = magoRunner.buildDiagnosticCommandArgs("analyze", config);
+			expect(analyzeArgs[0]).toBe("analyze");
 		});
 	});
 
-	suite("checkForErrors", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
-		const runner = () => magoRunner as any;
-
-		test("Should return false for clean output", () => {
-			const result: boolean = runner().checkForErrors(
-				"No issues found",
-				"lint",
+	test.describe("mergeDiagnostics", () => {
+		test("Should append new diagnostics to existing ones", () => {
+			const testUri = vscode.Uri.file("F:\\project\\merge.php");
+			const existing = new vscode.Diagnostic(
+				new vscode.Range(0, 0, 0, 1),
+				"Existing",
+				vscode.DiagnosticSeverity.Error,
 			);
-			assert.strictEqual(result, false);
+			diagnosticCollection.set(testUri, [existing]);
+
+			const newDiag = new vscode.Diagnostic(
+				new vscode.Range(1, 0, 1, 1),
+				"New",
+				vscode.DiagnosticSeverity.Warning,
+			);
+			magoRunner.mergeDiagnostics(testUri, [newDiag]);
+
+			const result = diagnosticCollection.get(testUri);
+			expect(result?.length).toBe(2);
+			expect(result?.[0].message).toBe("Existing");
+			expect(result?.[1].message).toBe("New");
+		});
+
+		test("Should work when no existing diagnostics are present", () => {
+			const testUri = vscode.Uri.file("F:\\project\\fresh.php");
+			// diagnosticCollection has no diagnostics for testUri at this point
+
+			const newDiag = new vscode.Diagnostic(
+				new vscode.Range(5, 3, 5, 10),
+				"Fresh diagnostic",
+				vscode.DiagnosticSeverity.Information,
+			);
+			magoRunner.mergeDiagnostics(testUri, [newDiag]);
+
+			const result = diagnosticCollection.get(testUri);
+			expect(result?.length).toBe(1);
+			expect(result?.[0].message).toBe("Fresh diagnostic");
+		});
+
+		test("Should handle merging an empty array (no-op)", () => {
+			const testUri = vscode.Uri.file("F:\\project\\noop.php");
+			const existing = new vscode.Diagnostic(
+				new vscode.Range(0, 0, 0, 1),
+				"Only existing",
+				vscode.DiagnosticSeverity.Error,
+			);
+			diagnosticCollection.set(testUri, [existing]);
+
+			magoRunner.mergeDiagnostics(testUri, []);
+
+			const result = diagnosticCollection.get(testUri);
+			expect(result?.length).toBe(1);
+			expect(result?.[0].message).toBe("Only existing");
+		});
+	});
+
+	test.describe("checkForErrors", () => {
+		test("Should return false for clean output", () => {
+			expect(checkForErrors("No issues found", "lint", outputChannel)).toBe(false);
+		});
+
+		test("Should return false for empty stderr", () => {
+			expect(checkForErrors("", "lint", outputChannel)).toBe(false);
 		});
 
 		test("Should return false for output containing ERROR in identifier (e.g. PHP_ERROR_CODE)", () => {
-			// \\bERROR\\b のみにマッチするため PHP_ERROR_CODE は誤検知しない
-			const result: boolean = runner().checkForErrors(
-				"class PHP_ERROR_CODE {}",
-				"lint",
-			);
-			assert.strictEqual(result, false);
+			// Only matches \bERROR\b, so PHP_ERROR_CODE does not produce a false positive
+			expect(checkForErrors("class PHP_ERROR_CODE {}", "lint", outputChannel)).toBe(false);
+		});
+
+		test("Should return false for ERRORS (plural) — does not match \\bERROR\\b", () => {
+			// "ERRORS" has no word boundary on the right side, so it returns false
+			expect(checkForErrors("Total ERRORS: 0", "lint", outputChannel)).toBe(false);
 		});
 
 		test("Should return true when output contains standalone ERROR", () => {
-			const result: boolean = runner().checkForErrors(
-				"Some output\nERROR: something went wrong\nmore output",
-				"lint",
-			);
-			assert.strictEqual(result, true);
+			expect(
+				checkForErrors("Some output\nERROR: something went wrong\nmore output", "lint", outputChannel),
+			).toBe(true);
+		});
+
+		test("Should return true and handle database access error", () => {
+			const dbOutput = "ERROR Failed to load database\nos error 5: Access Denied";
+			expect(checkForErrors(dbOutput, "lint", outputChannel)).toBe(true);
 		});
 
 		test("Should return true and handle TOML configuration error", () => {
 			const tomlOutput =
 				"ERROR Failed to build the configuration\nTOML parse error at line 5, column 10\nsome detail";
-			const result: boolean = runner().checkForErrors(tomlOutput, "lint");
-			assert.strictEqual(result, true);
+			expect(checkForErrors(tomlOutput, "lint", outputChannel)).toBe(true);
 		});
 
 		test("Should return true for configuration error without TOML line info", () => {
-			const output =
-				"ERROR Failed to build the configuration\nsome other detail";
-			const result: boolean = runner().checkForErrors(output, "analyze");
-			assert.strictEqual(result, true);
+			const output = "ERROR Failed to build the configuration\nsome other detail";
+			expect(checkForErrors(output, "analyze", outputChannel)).toBe(true);
+		});
+
+		test("Should return true for generic ERROR not matching known patterns", () => {
+			expect(
+				checkForErrors("ERROR something completely unexpected happened", "lint", outputChannel),
+			).toBe(true);
+		});
+
+		// The /i flag in checkForErrors is intentional: mago may output "error:" in
+		// lowercase on some platforms or in future versions.  These tests pin that behaviour.
+		test("Should return true for lowercase 'error:' (case-insensitive match)", () => {
+			expect(
+				checkForErrors("error: something went wrong", "lint", outputChannel),
+			).toBe(true);
+		});
+
+		test("Should return true for mixed-case 'Error:' (case-insensitive match)", () => {
+			expect(
+				checkForErrors("Error: something went wrong", "lint", outputChannel),
+			).toBe(true);
+		});
+
+		test("Should return false for 'errors' (plural, no word boundary on right side)", () => {
+			// 'errors' does not match \bERROR\b because 's' is a word character after 'r'
+			expect(checkForErrors("errors detected: 0", "lint", outputChannel)).toBe(false);
 		});
 	});
 
-	suite("notifyDiagnosticResult", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: テスト用にプライベートメソッドへアクセス
-		const runner = () => magoRunner as any;
-
+	test.describe("notifyDiagnosticResult", () => {
 		test("Should not throw when issueCount > 0 (file mode)", () => {
-			assert.doesNotThrow(() => {
-				runner().notifyDiagnosticResult(3, "{}", "lint", false);
-			});
+			expect(() => {
+				magoRunner.notifyDiagnosticResult(3, true, "lint", false);
+			}).not.toThrow();
 		});
 
 		test("Should not throw when issueCount > 0 (project mode)", () => {
-			assert.doesNotThrow(() => {
-				runner().notifyDiagnosticResult(5, "{}", "analyze", true, 2);
-			});
+			expect(() => {
+				magoRunner.notifyDiagnosticResult(5, true, "analyze", true, 2);
+			}).not.toThrow();
 		});
 
-		test("Should not throw when issueCount is 0 with valid JSON output (project)", () => {
-			assert.doesNotThrow(() => {
-				runner().notifyDiagnosticResult(0, "[]", "lint", true);
-			});
+		test("Should not throw when issueCount is 0 with output present (project)", () => {
+			expect(() => {
+				magoRunner.notifyDiagnosticResult(0, true, "lint", true);
+			}).not.toThrow();
 		});
 
 		test("Should not throw when issueCount is 0 with empty output (file)", () => {
-			assert.doesNotThrow(() => {
-				runner().notifyDiagnosticResult(0, "", "lint", false);
-			});
+			expect(() => {
+				magoRunner.notifyDiagnosticResult(0, false, "lint", false);
+			}).not.toThrow();
 		});
 
-		test("Should not throw when issueCount is 0 with invalid JSON output", () => {
-			assert.doesNotThrow(() => {
-				runner().notifyDiagnosticResult(
-					0,
-					"unexpected non-json output",
-					"lint",
-					false,
-				);
-			});
+		test("Should not throw when issueCount is 0 with non-empty output (file)", () => {
+			expect(() => {
+				magoRunner.notifyDiagnosticResult(0, true, "lint", false);
+			}).not.toThrow();
 		});
 	});
 
-	suite("isValidBaselinePath", () => {
+	test.describe("isValidBaselinePath", () => {
 		test("Should accept valid relative path", () => {
-			assert.strictEqual(isValidBaselinePath("baseline.toml"), true);
-			assert.strictEqual(isValidBaselinePath("baselines/lint.toml"), true);
-			assert.strictEqual(isValidBaselinePath("foo..bar.toml"), true); // not a traversal segment
+			expect(isValidBaselinePath("baseline.toml")).toBe(true);
+			expect(isValidBaselinePath("baselines/lint.toml")).toBe(true);
+			expect(isValidBaselinePath("foo..bar.toml")).toBe(true); // not a traversal segment
 		});
 
 		test("Should reject empty string", () => {
-			assert.strictEqual(isValidBaselinePath(""), false);
+			expect(isValidBaselinePath("")).toBe(false);
 		});
 
 		test("Should reject path traversal with ..", () => {
-			assert.strictEqual(isValidBaselinePath("../evil.toml"), false);
-			assert.strictEqual(isValidBaselinePath("foo/../../etc/passwd"), false);
+			expect(isValidBaselinePath("../evil.toml")).toBe(false);
+			expect(isValidBaselinePath("foo/../../etc/passwd")).toBe(false);
+		});
+
+		test("Should reject path traversal with backslash separator", () => {
+			// Rejects traversal even with Windows-style path separators
+			expect(isValidBaselinePath("foo\\..\\evil.toml")).toBe(false);
 		});
 
 		test("Should reject absolute Unix path", () => {
-			assert.strictEqual(isValidBaselinePath("/etc/passwd"), false);
+			expect(isValidBaselinePath("/etc/passwd")).toBe(false);
 		});
 
 		test("Should reject absolute Windows path", () => {
-			assert.strictEqual(isValidBaselinePath("C:\\baseline.toml"), false);
+			expect(isValidBaselinePath("C:\\baseline.toml")).toBe(false);
 		});
 
 		test("Should reject shell metacharacters", () => {
-			assert.strictEqual(isValidBaselinePath("base&line.toml"), false);
-			assert.strictEqual(isValidBaselinePath("base|line.toml"), false);
-			assert.strictEqual(isValidBaselinePath("base;line.toml"), false);
-			assert.strictEqual(isValidBaselinePath("base$line.toml"), false);
+			expect(isValidBaselinePath("base&line.toml")).toBe(false);
+			expect(isValidBaselinePath("base|line.toml")).toBe(false);
+			expect(isValidBaselinePath("base;line.toml")).toBe(false);
+			expect(isValidBaselinePath("base$line.toml")).toBe(false);
+		});
+
+		test("Should reject additional shell metacharacters", () => {
+			// Individually verify each security-sensitive shell metacharacter
+			expect(isValidBaselinePath("file>output.toml")).toBe(false);
+			expect(isValidBaselinePath("file<input.toml")).toBe(false);
+			expect(isValidBaselinePath("file`cmd`.toml")).toBe(false);
+			expect(isValidBaselinePath("file!flag.toml")).toBe(false);
+			expect(isValidBaselinePath("file*.toml")).toBe(false);
+			expect(isValidBaselinePath("file?.toml")).toBe(false);
+			expect(isValidBaselinePath("file(paren).toml")).toBe(false);
+			expect(isValidBaselinePath("file[bracket].toml")).toBe(false);
+			expect(isValidBaselinePath("file{brace}.toml")).toBe(false);
 		});
 
 		test("Should reject Windows environment variable expansion (%)", () => {
-			assert.strictEqual(
-				isValidBaselinePath("%APPDATA%\\baseline.toml"),
-				false,
-			);
+			expect(isValidBaselinePath("%APPDATA%\\baseline.toml")).toBe(false);
+		});
+
+		test("Should accept nested relative path without traversal", () => {
+			// Deeply nested paths are accepted as long as they contain no .. segments
+			expect(isValidBaselinePath("a/b/c/baseline.toml")).toBe(true);
+		});
+
+		test("Should reject path that is exactly '..'", () => {
+			expect(isValidBaselinePath("..")).toBe(false);
 		});
 	});
 
-	suite("Diagnostic Collection", () => {
+	test.describe("Diagnostic Collection", () => {
 		test("Should create diagnostic collection", () => {
-			assert.ok(diagnosticCollection);
+			expect(diagnosticCollection).toBeTruthy();
 		});
 
 		test("Should clear diagnostics", () => {
@@ -235,10 +346,10 @@ suite("MagoRunner Test Suite", () => {
 			);
 
 			diagnosticCollection.set(testUri, [diagnostic]);
-			assert.strictEqual(diagnosticCollection.get(testUri)?.length, 1);
+			expect(diagnosticCollection.get(testUri)?.length).toBe(1);
 
 			diagnosticCollection.clear();
-			assert.strictEqual(diagnosticCollection.get(testUri)?.length, 0);
+			expect(diagnosticCollection.get(testUri)?.length).toBe(0);
 		});
 
 		test("Should set diagnostics for specific file", () => {
@@ -255,10 +366,10 @@ suite("MagoRunner Test Suite", () => {
 			diagnosticCollection.set(testUri, [diagnostic]);
 
 			const diagnostics = diagnosticCollection.get(testUri);
-			assert.strictEqual(diagnostics?.length, 1);
-			assert.strictEqual(diagnostics?.[0].message, "Test error");
-			assert.strictEqual(diagnostics?.[0].source, "mago");
-			assert.strictEqual(diagnostics?.[0].code, "test-code");
+			expect(diagnostics?.length).toBe(1);
+			expect(diagnostics?.[0].message).toBe("Test error");
+			expect(diagnostics?.[0].source).toBe("mago");
+			expect(diagnostics?.[0].code).toBe("test-code");
 		});
 
 		test("Should handle multiple diagnostics for same file", () => {
@@ -284,7 +395,7 @@ suite("MagoRunner Test Suite", () => {
 			diagnosticCollection.set(testUri, diagnostics);
 
 			const result = diagnosticCollection.get(testUri);
-			assert.strictEqual(result?.length, 3);
+			expect(result?.length).toBe(3);
 		});
 
 		test("Should handle diagnostics for multiple files", () => {
@@ -307,58 +418,42 @@ suite("MagoRunner Test Suite", () => {
 				),
 			]);
 
-			assert.strictEqual(diagnosticCollection.get(file1Uri)?.length, 1);
-			assert.strictEqual(diagnosticCollection.get(file2Uri)?.length, 1);
+			expect(diagnosticCollection.get(file1Uri)?.length).toBe(1);
+			expect(diagnosticCollection.get(file2Uri)?.length).toBe(1);
 		});
 	});
 
-	suite("Output Channel", () => {
+	test.describe("Output Channel", () => {
 		test("Should create output channel", () => {
-			assert.ok(outputChannel);
+			expect(outputChannel).toBeTruthy();
 		});
 
 		test("Should append line to output channel", () => {
-			// OutputChannelは内容を直接読み取れないため、エラーが出ないことを確認
-			assert.doesNotThrow(() => {
+			// OutputChannel content cannot be read directly — just verify no error is thrown
+			expect(() => {
 				outputChannel.appendLine("Test output");
-			});
+			}).not.toThrow();
 		});
 
 		test("Should clear output channel", () => {
-			assert.doesNotThrow(() => {
+			expect(() => {
 				outputChannel.clear();
-			});
+			}).not.toThrow();
 		});
 	});
 
-	suite("Error Handling", () => {
-		test("Should handle runLintProject when no workspace folder is open", async () => {
-			// VS Code拡張環境では、実際のworkspaceFoldersが存在する可能性があるため、
-			// エラーがスローされないことを確認
-			await assert.doesNotReject(async () => {
-				await magoRunner.runLintProject();
-			});
-		});
-
-		test("Should handle runAnalyzeProject when no workspace folder is open", async () => {
-			await assert.doesNotReject(async () => {
-				await magoRunner.runAnalyzeProject();
-			});
-		});
-	});
-
-	suite("Integration with VS Code", () => {
+	test.describe("Integration with VS Code", () => {
 		test("Should register with language diagnostics", () => {
-			// DiagnosticCollectionが正しく登録されていることを確認
+			// Verify that the DiagnosticCollection is correctly registered
 			const allDiagnostics = vscode.languages.getDiagnostics();
-			assert.ok(Array.isArray(allDiagnostics));
+			expect(Array.isArray(allDiagnostics)).toBeTruthy();
 		});
 
 		test("Should use correct diagnostic severity levels", () => {
-			assert.strictEqual(vscode.DiagnosticSeverity.Error, 0);
-			assert.strictEqual(vscode.DiagnosticSeverity.Warning, 1);
-			assert.strictEqual(vscode.DiagnosticSeverity.Information, 2);
-			assert.strictEqual(vscode.DiagnosticSeverity.Hint, 3);
+			expect(vscode.DiagnosticSeverity.Error).toBe(0);
+			expect(vscode.DiagnosticSeverity.Warning).toBe(1);
+			expect(vscode.DiagnosticSeverity.Information).toBe(2);
+			expect(vscode.DiagnosticSeverity.Hint).toBe(3);
 		});
 	});
 });

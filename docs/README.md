@@ -73,21 +73,29 @@ This is useful for:
 1. Clone this repository
 2. Install dependencies:
    ```bash
-   # Using pnpm (recommended)
    pnpm install
-
-   # Or using npm
-   npm install
    ```
 3. Compile the TypeScript code:
    ```bash
-   # Using pnpm (recommended)
    pnpm run compile
-
-   # Or using npm
-   npm run compile
    ```
 4. Press F5 to open a new VS Code window with the extension loaded
+
+### Available Scripts
+
+<!-- AUTO-GENERATED from package.json scripts -->
+| Command | Description |
+|---------|-------------|
+| `pnpm run compile` | Compile TypeScript (production build via `tsconfig.json`) |
+| `pnpm run watch` | Compile in watch mode |
+| `pnpm test` | Compile, type-check test files (`tsconfig.test.json`), and run Playwright tests |
+| `pnpm run lint` | Run Biome linter on `src/` |
+| `pnpm run lint:fix` | Run Biome linter with auto-fix |
+| `pnpm run package` | Compile and build `.vsix` package |
+| `pnpm run publish` | Compile and publish to VS Code Marketplace |
+| `pnpm run install:vscode` | Build and install the current version to local VS Code |
+| `pnpm run uninstall:vscode` | Uninstall the extension from local VS Code |
+<!-- END AUTO-GENERATED -->
 
 ### Testing
 
@@ -95,7 +103,7 @@ For detailed testing instructions, see [TESTING.md](TESTING.md).
 
 Quick test:
 ```bash
-# Run VS Code extension tests
+# Compile, type-check test files, and run Playwright tests
 pnpm test
 
 # Or test manually by installing the extension
@@ -193,28 +201,4 @@ Please note that this project uses [Takumi Guard](https://github.com/flatt-secur
 
 ## :memo: Release Notes
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
-
-### 0.3.0
-
-- **Security**: Removed `shell: true` from `child_process.spawn` to eliminate shell injection via file paths
-- **Security**: Added `isValidBaselinePath` validation (path traversal, absolute paths, shell metacharacters including `%`) applied to both user input and settings-sourced baseline paths
-- **Bug Fixes**: Fixed 16 bugs — highlights include double `resolve()` in `spawnMago`, false-positive `ERROR` matching via word-boundary regex, `formatOnSave` double lint via re-entrant save guard, negative line/column indices, and `||` → `??` for zero-value positions
-- **Code Quality**: Added `readonly` fields, `MagoRunner.dispose()`, process timeout in `spawnMago`, consolidated duplicate logic, removed unnecessary `async`, fixed `MagoAnnotation.kind` type
-- **Tests**: Expanded unit test coverage — `buildDiagnosticCommandArgs`, `checkForErrors`, `notifyDiagnosticResult`, `parseProject` edge cases, and `isValidBaselinePath` boundary cases
-
-### 0.2.0
-
-- **Type Safety**: Introduced `src/types.ts` centralizing all Mago-specific types; replaced `any` with concrete types (`MagoJsonOutput`, `MagoJsonIssue`, etc.)
-- **Code Quality**: Fixed all lint errors — replaced `forEach` with `for...of` loops and removed non-null assertions
-
-### 0.1.0
-
-Initial release with comprehensive features:
-- Lint and analyze support for current file and entire project
-- Format support with format-on-save option
-- Baseline generation and filtering
-- Combined lint & analyze commands
-- Auto-run on save (enabled by default)
-- Problem pane integration with collapsible details
-- Smart error handling for TOML configuration errors
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
