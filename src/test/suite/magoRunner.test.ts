@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { resetMockState } from "../unit/setup";
 import * as vscode from "vscode";
 import { checkForErrors } from "../../magoErrorHandler";
 import { MagoRunner, isValidBaselinePath } from "../../magoRunner";
 import type { MagoCommand } from "../../types";
+import { resetMockState } from "../unit/setup";
 
 /**
  * Subclass of MagoRunner that exposes protected methods for testing purposes.
@@ -31,7 +31,13 @@ class TestableMagoRunner extends MagoRunner {
 		isProject: boolean,
 		fileCount?: number,
 	): void {
-		super.notifyDiagnosticResult(issueCount, hasOutput, command, isProject, fileCount);
+		super.notifyDiagnosticResult(
+			issueCount,
+			hasOutput,
+			command,
+			isProject,
+			fileCount,
+		);
 	}
 }
 
@@ -108,7 +114,10 @@ test.describe("MagoRunner Test Suite", () => {
 			const lintArgs = magoRunner.buildDiagnosticCommandArgs("lint", config);
 			expect(lintArgs[0]).toBe("lint");
 
-			const analyzeArgs = magoRunner.buildDiagnosticCommandArgs("analyze", config);
+			const analyzeArgs = magoRunner.buildDiagnosticCommandArgs(
+				"analyze",
+				config,
+			);
 			expect(analyzeArgs[0]).toBe("analyze");
 		});
 	});
@@ -171,7 +180,9 @@ test.describe("MagoRunner Test Suite", () => {
 
 	test.describe("checkForErrors", () => {
 		test("Should return false for clean output", () => {
-			expect(checkForErrors("No issues found", "lint", outputChannel)).toBe(false);
+			expect(checkForErrors("No issues found", "lint", outputChannel)).toBe(
+				false,
+			);
 		});
 
 		test("Should return false for empty stderr", () => {
@@ -180,22 +191,31 @@ test.describe("MagoRunner Test Suite", () => {
 
 		test("Should return false for output containing ERROR in identifier (e.g. PHP_ERROR_CODE)", () => {
 			// Only matches \bERROR\b, so PHP_ERROR_CODE does not produce a false positive
-			expect(checkForErrors("class PHP_ERROR_CODE {}", "lint", outputChannel)).toBe(false);
+			expect(
+				checkForErrors("class PHP_ERROR_CODE {}", "lint", outputChannel),
+			).toBe(false);
 		});
 
 		test("Should return false for ERRORS (plural) — does not match \\bERROR\\b", () => {
 			// "ERRORS" has no word boundary on the right side, so it returns false
-			expect(checkForErrors("Total ERRORS: 0", "lint", outputChannel)).toBe(false);
+			expect(checkForErrors("Total ERRORS: 0", "lint", outputChannel)).toBe(
+				false,
+			);
 		});
 
 		test("Should return true when output contains standalone ERROR", () => {
 			expect(
-				checkForErrors("Some output\nERROR: something went wrong\nmore output", "lint", outputChannel),
+				checkForErrors(
+					"Some output\nERROR: something went wrong\nmore output",
+					"lint",
+					outputChannel,
+				),
 			).toBe(true);
 		});
 
 		test("Should return true and handle database access error", () => {
-			const dbOutput = "ERROR Failed to load database\nos error 5: Access Denied";
+			const dbOutput =
+				"ERROR Failed to load database\nos error 5: Access Denied";
 			expect(checkForErrors(dbOutput, "lint", outputChannel)).toBe(true);
 		});
 
@@ -206,13 +226,18 @@ test.describe("MagoRunner Test Suite", () => {
 		});
 
 		test("Should return true for configuration error without TOML line info", () => {
-			const output = "ERROR Failed to build the configuration\nsome other detail";
+			const output =
+				"ERROR Failed to build the configuration\nsome other detail";
 			expect(checkForErrors(output, "analyze", outputChannel)).toBe(true);
 		});
 
 		test("Should return true for generic ERROR not matching known patterns", () => {
 			expect(
-				checkForErrors("ERROR something completely unexpected happened", "lint", outputChannel),
+				checkForErrors(
+					"ERROR something completely unexpected happened",
+					"lint",
+					outputChannel,
+				),
 			).toBe(true);
 		});
 
@@ -232,7 +257,9 @@ test.describe("MagoRunner Test Suite", () => {
 
 		test("Should return false for 'errors' (plural, no word boundary on right side)", () => {
 			// 'errors' does not match \bERROR\b because 's' is a word character after 'r'
-			expect(checkForErrors("errors detected: 0", "lint", outputChannel)).toBe(false);
+			expect(checkForErrors("errors detected: 0", "lint", outputChannel)).toBe(
+				false,
+			);
 		});
 	});
 

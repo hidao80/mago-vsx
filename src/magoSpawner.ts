@@ -40,7 +40,11 @@ export function spawnMagoProcess(
 					void vscode.window.showErrorMessage(
 						"Mago: Output exceeded 50 MB limit. The project may be too large to analyse at once.",
 					);
-					resolve({ stdout: "", stderr: "Output size limit exceeded", exitCode: null });
+					resolve({
+						stdout: "",
+						stderr: "Output size limit exceeded",
+						exitCode: null,
+					});
 				}
 				return;
 			}
@@ -64,7 +68,9 @@ export function spawnMagoProcess(
 		childProcess.on("error", (err: Error) => {
 			if (!resolved) {
 				resolved = true;
-				void vscode.window.showErrorMessage(`Failed to run mago: ${err.message}`);
+				void vscode.window.showErrorMessage(
+					`Failed to run mago: ${err.message}`,
+				);
 				resolve({ stdout: "", stderr: err.message, exitCode: null });
 			}
 		});

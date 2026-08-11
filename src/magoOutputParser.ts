@@ -115,9 +115,9 @@ export class MagoOutputParser {
 			"issues" in jsonData &&
 			Array.isArray((jsonData as Record<string, unknown>).issues)
 		) {
-			return (
-				(jsonData as Record<string, unknown>).issues as unknown[]
-			).filter(isMagoJsonIssue);
+			return ((jsonData as Record<string, unknown>).issues as unknown[]).filter(
+				isMagoJsonIssue,
+			);
 		}
 		if (isMagoJsonIssue(jsonData)) {
 			return [jsonData];

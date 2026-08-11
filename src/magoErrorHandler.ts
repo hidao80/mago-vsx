@@ -86,8 +86,15 @@ function handleTomlError(
 		/TOML parse error at line (?<line>\d+), column (?<column>\d+)/,
 	);
 	if (tomlErrorMatch) {
-		const { line, column } = tomlErrorMatch.groups as { line: string; column: string };
-		showConfigurationError(command, outputChannel, `line ${line}, column ${column}`);
+		const { line, column } = tomlErrorMatch.groups as {
+			line: string;
+			column: string;
+		};
+		showConfigurationError(
+			command,
+			outputChannel,
+			`line ${line}, column ${column}`,
+		);
 		outputChannel.appendLine("\n[ERROR] Configuration Error Detected");
 		outputChannel.appendLine(
 			`TOML parse error at line ${line}, column ${column}`,

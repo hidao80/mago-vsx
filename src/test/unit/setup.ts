@@ -167,7 +167,9 @@ const vscodeMock = {
 			for (const col of _activeCollections) {
 				for (const [uriStr, diags] of col.entries()) {
 					// Reconstruct a MockUri from the stored string key (file:///path form)
-					const fsPath = uriStr.replace(/^file:\/\//, "").replace(/^\/([A-Za-z]:)/, "$1");
+					const fsPath = uriStr
+						.replace(/^file:\/\//, "")
+						.replace(/^\/([A-Za-z]:)/, "$1");
 					result.push([MockUri.file(fsPath), diags]);
 				}
 			}

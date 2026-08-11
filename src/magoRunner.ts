@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { checkForErrors } from "./magoErrorHandler";
-import { logMagoOutput, spawnMagoProcess } from "./magoSpawner";
 import { MagoOutputParser } from "./magoOutputParser";
+import { logMagoOutput, spawnMagoProcess } from "./magoSpawner";
 import type { MagoCommand, SpawnResult } from "./types";
 
 /**
@@ -259,7 +259,12 @@ export class MagoRunner implements vscode.Disposable {
 
 		const result = await this.spawnMago(args, workspaceFolder);
 
-		logMagoOutput(`${command} Project`, workspaceFolder, result, this.outputChannel);
+		logMagoOutput(
+			`${command} Project`,
+			workspaceFolder,
+			result,
+			this.outputChannel,
+		);
 		this.handleMagoProjectOutput(
 			result.stdout,
 			result.stderr,
@@ -334,7 +339,9 @@ export class MagoRunner implements vscode.Disposable {
 				'Mago fmt --check: Some files need formatting. Check "Mago" output for details.',
 			);
 			this.outputChannel.show(true);
-		} else if (!checkForErrors(result.stderr, "fmt --check", this.outputChannel)) {
+		} else if (
+			!checkForErrors(result.stderr, "fmt --check", this.outputChannel)
+		) {
 			void vscode.window.showErrorMessage(
 				`Mago fmt --check: Failed with exit code ${result.exitCode}. Check "Mago" output for details.`,
 			);
@@ -362,7 +369,12 @@ export class MagoRunner implements vscode.Disposable {
 			workspaceFolder,
 		);
 
-		logMagoOutput(`${command} --generate-baseline`, workspaceFolder, result, this.outputChannel);
+		logMagoOutput(
+			`${command} --generate-baseline`,
+			workspaceFolder,
+			result,
+			this.outputChannel,
+		);
 
 		if (result.exitCode === 0) {
 			void vscode.window.showInformationMessage(
@@ -472,7 +484,12 @@ export class MagoRunner implements vscode.Disposable {
 		this.outputChannel.appendLine(`Parsed ${diagnostics.length} diagnostic(s)`);
 		this.mergeDiagnostics(fileUri, diagnostics);
 
-		this.notifyDiagnosticResult(diagnostics.length, stdout.trim().length > 0, command, false);
+		this.notifyDiagnosticResult(
+			diagnostics.length,
+			stdout.trim().length > 0,
+			command,
+			false,
+		);
 	}
 
 	/**
@@ -552,7 +569,9 @@ export class MagoRunner implements vscode.Disposable {
 		// No issues found. For project-level commands always notify; for single-file commands
 		// only notify when mago produced output (i.e. the file was actually analysed).
 		if (isProject || hasOutput) {
-			void vscode.window.showInformationMessage(`Mago ${command}: No issues found`);
+			void vscode.window.showInformationMessage(
+				`Mago ${command}: No issues found`,
+			);
 		}
 	}
 

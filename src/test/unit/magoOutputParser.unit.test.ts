@@ -784,7 +784,9 @@ test.describe("MagoOutputParser — Pure Unit Tests (vscode mocked)", () => {
 			// resolved path must stay within or equal to the workspace root.
 			if (result.size > 0) {
 				const resolvedPath = Array.from(result.keys())[0];
-				expect(resolvedPath.startsWith("/project") || resolvedPath === "/project").toBe(true);
+				expect(
+					resolvedPath.startsWith("/project") || resolvedPath === "/project",
+				).toBe(true);
 			}
 		});
 	});

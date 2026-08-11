@@ -96,7 +96,9 @@ test.describe("isValidBaselinePath - Pure Unit Tests", () => {
 		});
 
 		test("Windows UNC path \\\\server\\share\\baseline.toml", () => {
-			expect(isValidBaselinePath("\\\\server\\share\\baseline.toml")).toBe(false);
+			expect(isValidBaselinePath("\\\\server\\share\\baseline.toml")).toBe(
+				false,
+			);
 		});
 
 		test("Windows UNC path \\\\server\\share (no trailing filename)", () => {

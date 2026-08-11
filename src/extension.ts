@@ -8,7 +8,6 @@ let outputChannel: vscode.OutputChannel | undefined;
 /** Singleton runner that spawns mago child processes and converts results to diagnostics. Initialised in {@link activate}. */
 let magoRunner: MagoRunner | undefined;
 
-
 /**
  * Called by VS Code when the extension is activated.
  * Registers all commands, the on-save listener, and creates the
