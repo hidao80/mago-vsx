@@ -15,7 +15,7 @@
     "url": "https://github.com/hidao80/mago-vsx"
   },
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.125.0"
   },
   "categories": [
     "Linters",
