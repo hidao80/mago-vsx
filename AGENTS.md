@@ -28,7 +28,7 @@ Security-relevant invariants (see `docs/ADR.md` for the full history):
 - `bun run compile` — TypeScript build (`tsc -p ./`).
 - `bun run watch` — incremental build.
 - `bun run lint` / `bun run lint:fix` — Biome checks on `src/`.
-- `bun test` — compile, type-check tests (`tsconfig.test.json`), then run the Playwright suite.
+- `bun run test` — compile, type-check tests (`tsconfig.test.json`), then run the Playwright suite.
 - `bun run package` — compile and produce a `.vsix` via `vsce`.
 - `bun run install:vscode` — package and install the extension locally.
 
