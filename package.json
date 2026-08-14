@@ -109,17 +109,13 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "bun run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "bun run compile && tsc -p tsconfig.test.json --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "test": "playwright test --config playwright.config.ts",
-    "package": "bun run compile && vsce package",
-    "publish": "bun run compile && vsce publish",
-    "install:vscode": "bun run package && code --install-extension mago-vsx-$(node -p \"require('./package.json').version\").vsix",
-    "uninstall:vscode": "code --uninstall-extension hidao80.mago-vsx"
+    "package": "bun run compile && vsce package"
   },
   "packageManager": "bun@1.3.14",
   "devDependencies": {
