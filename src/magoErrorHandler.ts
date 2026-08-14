@@ -110,6 +110,12 @@ function handleTomlError(
 /**
  * Handle any other mago error lines found in stderr.
  * Displays all ERROR-prefixed lines in the output channel and returns true if any were found.
+ *
+ * Lines that start with mago's own "WARN " log-level prefix are excluded even
+ * if they contain the word "error" (e.g. `WARN Failed to walk ...: IO error
+ * for operation ...`) — that's a warning about a skipped path, not a fatal
+ * error, and the case-insensitive \bERROR\b match would otherwise treat the
+ * word "error" inside the warning text as if mago itself reported an error.
  * @param stderr - Raw stderr string from the mago process.
  * @param command - The mago sub-command that was run (used in user-facing messages).
  * @param outputChannel - Output channel for log messages.
@@ -122,7 +128,7 @@ function handleGenericError(
 ): boolean {
 	const errorLines = stderr
 		.split("\n")
-		.filter((line) => /\bERROR\b/i.test(line));
+		.filter((line) => /\bERROR\b/i.test(line) && !/^\s*WARN\b/i.test(line));
 	if (errorLines.length === 0) {
 		return false;
 	}

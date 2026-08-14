@@ -264,6 +264,21 @@ test.describe("MagoRunner Test Suite", () => {
 				false,
 			);
 		});
+
+		test("Should return false for a WARN line containing the word 'error' in prose", () => {
+			// mago emits lines like "WARN Failed to walk `...`: IO error for
+			// operation ...: Entry will be skipped." — this is a skipped-path
+			// warning, not a fatal error, even though it contains "error".
+			const warnOutput =
+				"WARN Failed to walk `vendor`: IO error for operation on vendor: file not found. Entry will be skipped.";
+			expect(checkForErrors(warnOutput, "analyze", outputChannel)).toBe(false);
+		});
+
+		test("Should still return true when a real ERROR line accompanies WARN lines", () => {
+			const mixedOutput =
+				"WARN Failed to walk `vendor`: IO error for operation. Entry will be skipped.\nERROR something actually went wrong";
+			expect(checkForErrors(mixedOutput, "analyze", outputChannel)).toBe(true);
+		});
 	});
 
 	test.describe("notifyDiagnosticResult", () => {
