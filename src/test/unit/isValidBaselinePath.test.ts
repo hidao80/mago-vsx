@@ -4,7 +4,7 @@
  * These tests run directly with Playwright (no VS Code extension host required).
  * The vscode module is mocked via the setup file loaded via globalSetup.
  *
- * Run with: pnpm run test:unit:playwright
+ * Run with: bun run test:unit:playwright
  */
 import "./setup";
 import { expect, test } from "@playwright/test";

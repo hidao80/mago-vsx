@@ -103,12 +103,6 @@ export interface MagoAnnotation {
 export type MagoLevel = "Error" | "Warning" | "Info" | "Hint";
 
 /**
- * Severity strings used in Mago's text-format output.
- * These are always lower-case in the text representation.
- */
-export type MagoSeverityText = "error" | "warning" | "info" | "hint";
-
-/**
  * A single issue as it arrives in Mago's JSON output.
  *
  * Both the array-of-issues format and the `{ issues: [...] }` wrapper format
@@ -134,16 +128,3 @@ export interface MagoJsonIssue {
 	/** Present only in older / legacy Mago output (1-indexed). */
 	column?: number;
 }
-
-/**
- * Top-level shape of Mago's JSON output.
- *
- * Mago may return:
- *   - a bare array:              `MagoJsonIssue[]`
- *   - a wrapper object:          `{ issues: MagoJsonIssue[] }`
- *   - a single issue object:     `MagoJsonIssue`
- */
-export type MagoJsonOutput =
-	| MagoJsonIssue[]
-	| { issues: MagoJsonIssue[] }
-	| MagoJsonIssue;

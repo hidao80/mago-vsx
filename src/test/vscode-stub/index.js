@@ -1,5 +1,5 @@
 // Minimal VS Code API mock, published as a real local "vscode" package via
-// pnpm's `link:` protocol (see package.json devDependencies). This lets
+// Bun's `file:` protocol (see package.json devDependencies). This lets
 // production code's `import * as vscode from "vscode"` resolve through
 // Node's normal module resolution — no Module._resolveFilename patching
 // needed, which avoids fighting Playwright's own static import resolver.
@@ -11,20 +11,26 @@ const DiagnosticSeverity = {
 	Hint: 3,
 };
 
+/** Mock of vscode.Range: a start/end line-and-character position pair. */
 class MockRange {
+	/** @param {number} startLine @param {number} startChar @param {number} endLine @param {number} endChar */
 	constructor(startLine, startChar, endLine, endChar) {
 		this.start = { line: startLine, character: startChar };
 		this.end = { line: endLine, character: endChar };
 	}
 }
 
+/** Mock of vscode.Uri: wraps a filesystem path and formats it as a file:// URI string. */
 class MockUri {
+	/** @param {string} fsPath */
 	constructor(fsPath) {
 		this.fsPath = fsPath;
 	}
+	/** Create a MockUri from a filesystem path, mirroring vscode.Uri.file(). */
 	static file(p) {
 		return new MockUri(p);
 	}
+	/** Format this URI as a file:// string. */
 	toString() {
 		// VS Code Uri.toString() returns file:///path (3 slashes)
 		const normalized = this.fsPath.replace(/\\/g, "/");
@@ -35,21 +41,27 @@ class MockUri {
 	}
 }
 
+/** Mock of vscode.Location: pairs a URI with a range within it. */
 class MockLocation {
+	/** @param {MockUri} uri @param {MockRange} range */
 	constructor(uri, range) {
 		this.uri = uri;
 		this.range = range;
 	}
 }
 
+/** Mock of vscode.DiagnosticRelatedInformation: a note attached to a diagnostic. */
 class MockDiagnosticRelatedInformation {
+	/** @param {MockLocation} location @param {string} message */
 	constructor(location, message) {
 		this.location = location;
 		this.message = message;
 	}
 }
 
+/** Mock of vscode.Diagnostic: a single reported issue with a range, message, and severity. */
 class MockDiagnostic {
+	/** @param {MockRange} range @param {string} message @param {number} severity */
 	constructor(range, message, severity) {
 		this.range = range;
 		this.message = message;
@@ -60,28 +72,35 @@ class MockDiagnostic {
 // Registry of all active diagnostic collections — used by getDiagnostics() below.
 let _activeCollections = [];
 
+/** Mock of vscode.DiagnosticCollection: an in-memory map from URI string to diagnostics. */
 class MockDiagnosticCollection {
+	/** Register this collection in the active-collections list so getDiagnostics() can find it. */
 	constructor() {
 		this._map = new Map();
 		_activeCollections.push(this);
 	}
 
+	/** Return the diagnostics stored for the given URI, or undefined. */
 	get(uri) {
 		return this._map.get(uri.toString());
 	}
 
+	/** Replace the diagnostics stored for the given URI. */
 	set(uri, diagnostics) {
 		this._map.set(uri.toString(), diagnostics);
 	}
 
+	/** Remove all diagnostics stored for the given URI. */
 	delete(uri) {
 		this._map.delete(uri.toString());
 	}
 
+	/** Remove all diagnostics for every URI in this collection. */
 	clear() {
 		this._map.clear();
 	}
 
+	/** Clear the collection and unregister it from the active-collections list. */
 	dispose() {
 		this._map.clear();
 		_activeCollections = _activeCollections.filter((c) => c !== this);
@@ -93,19 +112,25 @@ class MockDiagnosticCollection {
 	}
 }
 
+/** Mock of vscode.OutputChannel: all methods are no-ops, since tests don't assert on log output. */
 class MockOutputChannel {
+	/** No-op: mirrors vscode.OutputChannel.appendLine(). */
 	appendLine(_line) {
 		/* no-op */
 	}
+	/** No-op: mirrors vscode.OutputChannel.append(). */
 	append(_text) {
 		/* no-op */
 	}
+	/** No-op: mirrors vscode.OutputChannel.show(). */
 	show(_preserveFocus) {
 		/* no-op */
 	}
+	/** No-op: mirrors vscode.OutputChannel.clear(). */
 	clear() {
 		/* no-op */
 	}
+	/** No-op: mirrors vscode.OutputChannel.dispose(). */
 	dispose() {
 		/* no-op */
 	}

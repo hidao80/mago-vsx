@@ -2,7 +2,7 @@
  * Playwright globalSetup for tests that need the "vscode" module mocked.
  *
  * The mock itself lives in src/test/vscode-stub and is wired up as a real,
- * npm-resolvable "vscode" package via pnpm's `link:` protocol (see
+ * npm-resolvable "vscode" package via Bun's `file:` protocol (see
  * package.json devDependencies). Node's normal module resolution finds it,
  * so production code's `import * as vscode from "vscode"` just works —
  * no Module._resolveFilename patching required.

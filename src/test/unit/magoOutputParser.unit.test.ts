@@ -11,7 +11,7 @@
  * integration-style scenarios including Windows paths, notes, help text, and
  * relatedInformation — it does NOT duplicate the tests here.
  *
- * Run with: pnpm run test:unit:playwright
+ * Run with: bun run test:unit:playwright
  */
 
 import * as path from "node:path";
@@ -34,6 +34,11 @@ interface DiagLike {
 	relatedInformation?: Array<{ message: string }>;
 }
 
+/**
+ * Cast a mock diagnostic object to the shape asserted against in these tests.
+ * @param d - A diagnostic produced by the mocked vscode.Diagnostic constructor.
+ * @returns The same value, typed as {@link DiagLike}.
+ */
 function toDiag(d: unknown): DiagLike {
 	return d as DiagLike;
 }

@@ -10,6 +10,7 @@ import { resetMockState } from "../unit/setup";
  * Avoids `as any` casts while keeping the production class well-encapsulated.
  */
 class TestableMagoRunner extends MagoRunner {
+	/** Public passthrough to the protected {@link MagoRunner.buildDiagnosticCommandArgs}. */
 	override buildDiagnosticCommandArgs(
 		command: MagoCommand,
 		config: vscode.WorkspaceConfiguration,
@@ -17,6 +18,7 @@ class TestableMagoRunner extends MagoRunner {
 		return super.buildDiagnosticCommandArgs(command, config);
 	}
 
+	/** Public passthrough to the protected {@link MagoRunner.mergeDiagnostics}. */
 	override mergeDiagnostics(
 		uri: vscode.Uri,
 		newDiagnostics: vscode.Diagnostic[],
@@ -24,6 +26,7 @@ class TestableMagoRunner extends MagoRunner {
 		super.mergeDiagnostics(uri, newDiagnostics);
 	}
 
+	/** Public passthrough to the protected {@link MagoRunner.notifyDiagnosticResult}. */
 	override notifyDiagnosticResult(
 		issueCount: number,
 		hasOutput: boolean,

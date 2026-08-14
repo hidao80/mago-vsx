@@ -125,6 +125,13 @@ export class MagoOutputParser {
 		return [];
 	}
 
+	/**
+	 * Append a diagnostic to the array stored for the given file path, creating
+	 * the array if this is the first diagnostic seen for that file.
+	 * @param diagnosticsByFile - Map from absolute file path to accumulated diagnostics, mutated in place.
+	 * @param filePath - Absolute file path the diagnostic belongs to.
+	 * @param diagnostic - The diagnostic to append.
+	 */
 	private addDiagnosticForFile(
 		diagnosticsByFile: Map<string, vscode.Diagnostic[]>,
 		filePath: string,
