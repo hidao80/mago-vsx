@@ -31,7 +31,7 @@ TypeScript type checking is enforced on **both** production and test files:
 ### Full test suite
 
 ```bash
-pnpm test
+bun test
 ```
 
 This command:
@@ -42,27 +42,27 @@ This command:
 ### Compile only
 
 ```bash
-pnpm run compile
+bun run compile
 ```
 
 ### Lint
 
 ```bash
 # Check
-pnpm run lint
+bun run lint
 
 # Auto-fix
-pnpm run lint:fix
+bun run lint:fix
 ```
 
 ### Manual testing via local install
 
 ```bash
 # Build and install to your local VS Code (version is resolved automatically)
-pnpm run install:vscode
+bun run install:vscode
 
 # Uninstall
-pnpm run uninstall:vscode
+bun run uninstall:vscode
 ```
 
 ## F5 Debug Mode
@@ -139,8 +139,8 @@ pnpm run uninstall:vscode
 
 | Symptom | Fix |
 |---------|-----|
-| Compile errors | Run `pnpm run compile` and check output |
-| Test type errors | Run `pnpm exec tsc -p tsconfig.test.json --noEmit` |
+| Compile errors | Run `bun run compile` and check output |
+| Test type errors | Run `bunx tsc -p tsconfig.test.json --noEmit` |
 | mago command not found | Check `mago.executablePath` setting; verify mago is in `PATH` |
 | Nothing in Problems pane | Check **Output** > **Mago** channel for raw output |
 
@@ -150,10 +150,10 @@ GitHub Actions runs the following checks on every push:
 
 | Workflow | What it checks |
 |----------|---------------|
-| `audit.yml` | `pnpm audit` + Takumi Guard supply-chain scan |
+| `audit.yml` | `bun audit` + Takumi Guard supply-chain scan |
 | `lint.yml` | Biome lint |
 | `build.yml` | TypeScript compile + VSIX package |
-| `test.yml` | Full `pnpm test` (Xvfb on Linux for Playwright) |
+| `test.yml` | Full `bun test` (Xvfb on Linux for Playwright) |
 
 CI test step (Linux):
 
@@ -166,7 +166,7 @@ CI test step (Linux):
 - name: Run tests
   uses: coactions/setup-xvfb@v1
   with:
-    run: pnpm test
+    run: bun test
 ```
 
 For full workflow details see [.github/workflows/README.md](.github/workflows/README.md).
