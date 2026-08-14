@@ -12,28 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: flatt-security/setup-takumi-guard-npm@v1
-      - uses: pnpm/setup@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          version: 11.21.0
-          runtime: node@22
-          cache: true
-      - shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          bun-version: 1.3.14
       - uses: actions/cache@v6
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run compile
-      - run: pnpm exec tsc --noEmit
+            ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
+      - run: bun run compile
+      - run: bunx tsc --noEmit
       - run: |
           test -f out/extension.js || (echo "extension.js not found" && exit 1)
           test -f out/magoRunner.js || (echo "magoRunner.js not found" && exit 1)
           test -f out/magoOutputParser.js || (echo "magoOutputParser.js not found" && exit 1)
-      - run: pnpm run package
+      - run: bun run package
       - if: success()
         uses: actions/upload-artifact@v7
         with:
