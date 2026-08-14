@@ -15,6 +15,4 @@ graphify-out/
 # Package manager lock files
 package-lock.json
 yarn.lock
-
-# pnpm
-.pnpm-debug.log
+pnpm-lock.yaml
