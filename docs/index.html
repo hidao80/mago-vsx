@@ -7,8 +7,8 @@
 <meta name="description" content="Bring Mago's lint, analyze, format, and baseline workflows straight into VS Code. Real-time diagnostics, format-on-save, and baseline support for gradually improving legacy PHP codebases.">
 <meta name="author" content="hidao80">
 
-<!-- Favicon (emoji) -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐘</text></svg>">
+<!-- Favicon (Twemoji) -->
+<link rel="icon" type="image/svg+xml" href="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f418.svg">
 
 <!-- OGP -->
 <meta property="og:type" content="website">
@@ -52,7 +52,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
 <style>
-:root{ --pico-font-size: 100%;} .hero{ text-align: center; padding: 3rem 1rem 2rem;} .hero .emoji{ font-size: 4rem; line-height: 1;} .hero p.lead{ font-size: 1.15rem; max-width: 42rem; margin: 1rem auto 2rem; color: var(--pico-muted-color);} .cta-group{ display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;} .badges{ display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0;} .badges img{ height: 20px;} section{ padding: 2.5rem 0;} section h2{ text-align: center; margin-bottom: 2rem;} .features-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;} .feature-card{ background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem;} .feature-card .icon{ font-size: 1.75rem;} .feature-card h3{ margin: 0.5rem 0;} .feature-card p{ color: var(--pico-muted-color); margin: 0;} .commands-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;} .commands-grid table{ margin: 0;} footer{ text-align: center; padding: 2rem 0 3rem; color: var(--pico-muted-color);} footer a{ color: inherit;}
+:root{ --pico-font-size: 100%;} .hero{ text-align: center; padding: 3rem 1rem 2rem;} .hero .emoji{ width: 4rem; height: 4rem;} .hero p.lead{ font-size: 1.15rem; max-width: 42rem; margin: 1rem auto 2rem; color: var(--pico-muted-color);} .cta-group{ display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;} .badges{ display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0;} .badges img{ height: 20px;} section{ padding: 2.5rem 0;} section h2{ text-align: center; margin-bottom: 2rem;} .features-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;} .feature-card{ background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem;} .feature-card .icon{ width: 1.75rem; height: 1.75rem;} .feature-card h3{ margin: 0.5rem 0;} .feature-card p{ color: var(--pico-muted-color); margin: 0;} .commands-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;} .commands-grid table{ margin: 0;} footer{ text-align: center; padding: 2rem 0 3rem; color: var(--pico-muted-color);} footer a{ color: inherit;}
 </style>
 </head>
 <body>
@@ -60,7 +60,7 @@
 <main class="container">
 
   <section class="hero">
-    <div class="emoji" role="img" aria-label="Elephant">🐘</div>
+    <img class="emoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f418.svg" alt="Elephant">
     <h1>Mago for VS Code</h1>
     <p class="lead">
       PHP static analysis, right where you write code. Lint, analyze, format, and manage
@@ -82,32 +82,32 @@
     <h2>Features</h2>
     <div class="features-grid">
       <article class="feature-card">
-        <div class="icon">🔍</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f50d.svg" alt="Magnifying glass">
         <h3>Lint &amp; Analyze</h3>
         <p>Run Mago's lint and analyze commands on a single file or the whole project, with results reported straight into VS Code.</p>
       </article>
       <article class="feature-card">
-        <div class="icon">🎨</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f3a8.svg" alt="Artist palette">
         <h3>Format PHP Files</h3>
         <p>Format your code with Mago's formatter, including optional format-on-save.</p>
       </article>
       <article class="feature-card">
-        <div class="icon">📐</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f4d0.svg" alt="Triangular ruler">
         <h3>Baseline Support</h3>
         <p>Suppress existing issues with baseline files so you can focus on what's new — ideal for legacy codebases.</p>
       </article>
       <article class="feature-card">
-        <div class="icon">🧩</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f9e9.svg" alt="Puzzle piece">
         <h3>Problems Pane Integration</h3>
         <p>All detected issues appear in VS Code's native Problems pane with collapsible details.</p>
       </article>
       <article class="feature-card">
-        <div class="icon">💾</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f4be.svg" alt="Floppy disk">
         <h3>Auto-run on Save</h3>
         <p>Automatically lint, analyze, and format files whenever you save, with each behavior independently configurable.</p>
       </article>
       <article class="feature-card">
-        <div class="icon">⌨️</div>
+        <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/2328.svg" alt="Keyboard">
         <h3>Command Palette</h3>
         <p>Access every Mago command directly from VS Code's command palette — no context switching required.</p>
       </article>
