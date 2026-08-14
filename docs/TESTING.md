@@ -31,7 +31,7 @@ TypeScript type checking is enforced on **both** production and test files:
 ### Full test suite
 
 ```bash
-bun test
+bun run test
 ```
 
 This command:
@@ -153,7 +153,7 @@ GitHub Actions runs the following checks on every push:
 | `audit.yml` | `bun audit` + Takumi Guard supply-chain scan |
 | `lint.yml` | Biome lint |
 | `build.yml` | TypeScript compile + VSIX package |
-| `test.yml` | Full `bun test` (Xvfb on Linux for Playwright) |
+| `test.yml` | Full `bun run test` (Xvfb on Linux for Playwright) |
 
 CI test step (Linux):
 
@@ -166,7 +166,7 @@ CI test step (Linux):
 - name: Run tests
   uses: coactions/setup-xvfb@v1
   with:
-    run: bun test
+    run: bun run test
 ```
 
 For full workflow details see [.github/workflows/README.md](.github/workflows/README.md).
