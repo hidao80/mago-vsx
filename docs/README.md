@@ -88,7 +88,7 @@ This is useful for:
 |---------|-------------|
 | `bun run compile` | Compile TypeScript (production build via `tsconfig.json`) |
 | `bun run watch` | Compile in watch mode |
-| `bun test` | Compile, type-check test files (`tsconfig.test.json`), and run Playwright tests |
+| `bun run test` | Compile, type-check test files (`tsconfig.test.json`), and run Playwright tests |
 | `bun run lint` | Run Biome linter on `src/` |
 | `bun run lint:fix` | Run Biome linter with auto-fix |
 | `bun run package` | Compile and build `.vsix` package |
@@ -104,7 +104,7 @@ For detailed testing instructions, see [TESTING.md](TESTING.md).
 Quick test:
 ```bash
 # Compile, type-check test files, and run Playwright tests
-bun test
+bun run test
 
 # Or test manually by installing the extension
 bun run install:vscode
