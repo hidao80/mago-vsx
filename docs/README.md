@@ -66,18 +66,18 @@ This is useful for:
 ## :clipboard: Requirements
 
 - Mago PHP static analysis tool must be installed and available in your PATH, or you must specify the path in settings
-- Node.js and pnpm (or npm) for development
+- Node.js and Bun (or npm) for development
 
 ## :hammer_and_wrench: Development Setup
 
 1. Clone this repository
 2. Install dependencies:
    ```bash
-   pnpm install
+   bun install
    ```
 3. Compile the TypeScript code:
    ```bash
-   pnpm run compile
+   bun run compile
    ```
 4. Press F5 to open a new VS Code window with the extension loaded
 
@@ -86,15 +86,15 @@ This is useful for:
 <!-- AUTO-GENERATED from package.json scripts -->
 | Command | Description |
 |---------|-------------|
-| `pnpm run compile` | Compile TypeScript (production build via `tsconfig.json`) |
-| `pnpm run watch` | Compile in watch mode |
-| `pnpm test` | Compile, type-check test files (`tsconfig.test.json`), and run Playwright tests |
-| `pnpm run lint` | Run Biome linter on `src/` |
-| `pnpm run lint:fix` | Run Biome linter with auto-fix |
-| `pnpm run package` | Compile and build `.vsix` package |
-| `pnpm run publish` | Compile and publish to VS Code Marketplace |
-| `pnpm run install:vscode` | Build and install the current version to local VS Code |
-| `pnpm run uninstall:vscode` | Uninstall the extension from local VS Code |
+| `bun run compile` | Compile TypeScript (production build via `tsconfig.json`) |
+| `bun run watch` | Compile in watch mode |
+| `bun test` | Compile, type-check test files (`tsconfig.test.json`), and run Playwright tests |
+| `bun run lint` | Run Biome linter on `src/` |
+| `bun run lint:fix` | Run Biome linter with auto-fix |
+| `bun run package` | Compile and build `.vsix` package |
+| `bun run publish` | Compile and publish to VS Code Marketplace |
+| `bun run install:vscode` | Build and install the current version to local VS Code |
+| `bun run uninstall:vscode` | Uninstall the extension from local VS Code |
 <!-- END AUTO-GENERATED -->
 
 ### Testing
@@ -104,10 +104,10 @@ For detailed testing instructions, see [TESTING.md](TESTING.md).
 Quick test:
 ```bash
 # Compile, type-check test files, and run Playwright tests
-pnpm test
+bun test
 
 # Or test manually by installing the extension
-pnpm run install:vscode
+bun run install:vscode
 ```
 
 ### Building VSIX Package
@@ -115,8 +115,8 @@ pnpm run install:vscode
 To build a `.vsix` package for distribution:
 
 ```bash
-# Using pnpm (recommended)
-pnpm run package
+# Using Bun (recommended)
+bun run package
 
 # Or using npm
 npm run package
@@ -129,8 +129,8 @@ This will create a `mago-vsx-<version>.vsix` file in the project root.
 To build and install the extension to your local VS Code:
 
 ```bash
-# Using pnpm (recommended)
-pnpm run install:vscode
+# Using Bun (recommended)
+bun run install:vscode
 
 # Or using npm
 npm run install:vscode
@@ -139,8 +139,8 @@ npm run install:vscode
 To uninstall the extension from VS Code:
 
 ```bash
-# Using pnpm (recommended)
-pnpm run uninstall:vscode
+# Using Bun (recommended)
+bun run uninstall:vscode
 
 # Or using npm
 npm run uninstall:vscode
@@ -149,8 +149,8 @@ npm run uninstall:vscode
 ### Publishing to VS Code Marketplace
 
 ```bash
-# Using pnpm (recommended)
-pnpm run publish
+# Using Bun (recommended)
+bun run publish
 
 # Or using npm
 npm run publish
