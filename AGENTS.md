@@ -25,12 +25,12 @@ Security-relevant invariants (see `docs/ADR.md` for the full history):
 
 ## Commands
 
-- `pnpm run compile` — TypeScript build (`tsc -p ./`).
-- `pnpm run watch` — incremental build.
-- `pnpm run lint` / `pnpm run lint:fix` — Biome checks on `src/`.
-- `pnpm test` — compile, type-check tests (`tsconfig.test.json`), then run the Playwright suite.
-- `pnpm run package` — compile and produce a `.vsix` via `vsce`.
-- `pnpm run install:vscode` — package and install the extension locally.
+- `bun run compile` — TypeScript build (`tsc -p ./`).
+- `bun run watch` — incremental build.
+- `bun run lint` / `bun run lint:fix` — Biome checks on `src/`.
+- `bun test` — compile, type-check tests (`tsconfig.test.json`), then run the Playwright suite.
+- `bun run package` — compile and produce a `.vsix` via `vsce`.
+- `bun run install:vscode` — package and install the extension locally.
 
 ## Testing
 
