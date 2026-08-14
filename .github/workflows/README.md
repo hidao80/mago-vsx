@@ -15,30 +15,30 @@
 **環境**:
 - OS: `ubuntu-latest`
 - Node.js: 20.x
-- pnpm: 9.0.0
+- Bun: 1.3.14
 
 **実行内容**:
 
 #### 1. 環境セットアップ
 - リポジトリのチェックアウト
 - Node.js 20.xのセットアップ
-- pnpm 9.0.0のセットアップ
-- pnpmストアのキャッシュ（`pnpm-lock.yaml` ベース）
+- Bun 1.3.14のセットアップ
+- Bunキャッシュ（`bun.lock` ベース）
 - 依存関係のインストール（`--frozen-lockfile`）
 
 #### 2. セキュリティチェック
-- **`pnpm audit`**: 脆弱性スキャン（moderate以上の脆弱性を検出）
+- **`bun audit`**: 脆弱性スキャン
   - `continue-on-error: true` で警告のみ（CIを止めない）
-- **`pnpm outdated`**: 古い依存関係の確認
+- **`bun outdated`**: 古い依存関係の確認
 
 #### 3. ビルド検証
-- TypeScriptコンパイル（`pnpm run compile`）
+- TypeScriptコンパイル（`bun run compile`）
 - 型チェック（`tsc --noEmit`）
 - ビルド出力ファイルの存在確認:
   - `out/extension.js`
   - `out/magoRunner.js`
   - `out/magoOutputParser.js`
-- VSIXパッケージのビルド（`pnpm run package`）
+- VSIXパッケージのビルド（`bun run package`）
 
 #### 4. テスト
 - Xvfbと必要なライブラリのインストール:
@@ -54,24 +54,24 @@
 
 ## キャッシュの仕組み
 
-### pnpmストアキャッシュ
+### Bunキャッシュ
 
 ```yaml
-- name: Get pnpm store directory
-  run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-- name: Setup pnpm cache
-  uses: actions/cache@v4
+- uses: oven-sh/setup-bun@v2
   with:
-    path: ${{ env.STORE_PATH }}
-    key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+    bun-version: 1.3.14
+
+- uses: actions/cache@v6
+  with:
+    path: ~/.bun/install/cache
+    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
     restore-keys: |
-      ${{ runner.os }}-pnpm-store-
+      ${{ runner.os }}-bun-
 ```
 
 **動作**:
-1. `pnpm store path`でストアディレクトリのパスを取得
-2. `pnpm-lock.yaml`のハッシュ値をキャッシュキーに含める
+1. Bunのグローバルキャッシュディレクトリ（`~/.bun/install/cache`）をキャッシュ対象にする
+2. `bun.lock`のハッシュ値をキャッシュキーに含める
 3. ロックファイルが同じなら既存のキャッシュを使用
 4. ロックファイルが変更されたら新しいキャッシュを作成
 
@@ -101,17 +101,14 @@ GitHub Actionsのキャッシュ:
 
 ## セキュリティチェックの詳細
 
-### pnpm audit
+### bun audit
 
-`pnpm audit --audit-level moderate`は以下をチェック:
-- **moderate**: 中程度の脆弱性
-- **high**: 高い脆弱性
-- **critical**: 致命的な脆弱性
+`bun audit`は依存関係の既知の脆弱性をチェックします。
 
 **continue-on-error: true**により、脆弱性が見つかってもCIは継続します。
 ただし、ログに警告が表示されるため、定期的に確認して対応してください。
 
-### pnpm outdated
+### bun outdated
 
 古い依存関係を検出し、更新可能なパッケージを表示します。
 `|| true`により、古いパッケージがあってもエラーにはなりません。
@@ -121,25 +118,24 @@ GitHub Actionsのキャッシュ:
 ### セキュリティ監査で警告が出た場合
 
 1. GitHub Actionsのログで詳細を確認
-2. ローカルで`pnpm audit`を実行して詳細確認
-3. `pnpm audit --fix`で自動修正を試行
-4. 手動で依存関係を更新: `pnpm update [package]`
+2. ローカルで`bun audit`を実行して詳細確認
+3. 手動で依存関係を更新: `bun update [package]`
 
 ### ビルドが失敗する場合
 
 1. **キャッシュの問題**:
    ```bash
    # ローカルでキャッシュをクリア
-   pnpm store prune
+   rm -rf ~/.bun/install/cache
    ```
    GitHub Actionsのキャッシュも手動で削除可能（Settings > Actions > Caches）
 
 2. **依存関係の問題**:
-   - `pnpm-lock.yaml`が最新か確認
-   - ローカルで`pnpm install`が成功するか確認
+   - `bun.lock`が最新か確認
+   - ローカルで`bun install`が成功するか確認
 
 3. **TypeScriptエラー**:
-   - ローカルで`pnpm run compile`を実行してエラーを確認
+   - ローカルで`bun run compile`を実行してエラーを確認
 
 ### テストが失敗する場合
 
