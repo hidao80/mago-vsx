@@ -16,3 +16,7 @@ node_modules/**
 graphify-out/**
 bunfig.toml
 bun.lock
+test/**
+test-results/**
+docs/**
+*.md
