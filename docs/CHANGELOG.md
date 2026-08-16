@@ -5,6 +5,19 @@ All notable changes to the Mago VS Code extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-08-14
+
+### Fixed
+
+- Error handling now excludes `WARN`-level lines that happen to contain the word "error", so Mago's warning output is no longer misclassified as a failure.
+- Bumped the required `vscode` engine version to `^1.125.0`.
+
+### Changed
+
+- Removed the unused `vscode:prepublish`, `publish`, `install:vscode`, and `uninstall:vscode` scripts from `package.json`.
+
+---
+
 ## [1.0.1] - 2026-08-11
 
 ### Fixed
