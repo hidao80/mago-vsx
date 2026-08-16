@@ -55,16 +55,6 @@ bun run lint
 bun run lint:fix
 ```
 
-### Manual testing via local install
-
-```bash
-# Build and install to your local VS Code (version is resolved automatically)
-bun run install:vscode
-
-# Uninstall
-bun run uninstall:vscode
-```
-
 ## F5 Debug Mode
 
 1. Open the project in VS Code

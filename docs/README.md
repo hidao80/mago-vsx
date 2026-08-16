@@ -92,9 +92,6 @@ This is useful for:
 | `bun run lint` | Run Biome linter on `src/` |
 | `bun run lint:fix` | Run Biome linter with auto-fix |
 | `bun run package` | Compile and build `.vsix` package |
-| `bun run publish` | Compile and publish to VS Code Marketplace |
-| `bun run install:vscode` | Build and install the current version to local VS Code |
-| `bun run uninstall:vscode` | Uninstall the extension from local VS Code |
 <!-- END AUTO-GENERATED -->
 
 ### Testing
@@ -105,9 +102,6 @@ Quick test:
 ```bash
 # Compile, type-check test files, and run Playwright tests
 bun run test
-
-# Or test manually by installing the extension
-bun run install:vscode
 ```
 
 ### Building VSIX Package
@@ -123,38 +117,6 @@ npm run package
 ```
 
 This will create a `mago-vsx-<version>.vsix` file in the project root.
-
-### Installing to VS Code
-
-To build and install the extension to your local VS Code:
-
-```bash
-# Using Bun (recommended)
-bun run install:vscode
-
-# Or using npm
-npm run install:vscode
-```
-
-To uninstall the extension from VS Code:
-
-```bash
-# Using Bun (recommended)
-bun run uninstall:vscode
-
-# Or using npm
-npm run uninstall:vscode
-```
-
-### Publishing to VS Code Marketplace
-
-```bash
-# Using Bun (recommended)
-bun run publish
-
-# Or using npm
-npm run publish
-```
 
 ## :package: Installation
 
