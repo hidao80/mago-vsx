@@ -115,7 +115,12 @@
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
     "test": "playwright test --config playwright.config.ts",
-    "package": "bun run compile && vsce package"
+    "package": "bun run compile && vsce package",
+    "act": "act -l",
+    "act:audit": "act -j audit",
+    "act:build": "act -j build",
+    "act:lint": "act -j lint",
+    "act:test": "act -j test"
   },
   "packageManager": "bun@1.3.14",
   "devDependencies": {
