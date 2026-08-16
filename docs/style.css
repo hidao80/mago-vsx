@@ -1,0 +1,25 @@
+:root{ --pico-font-size: 100%;}
+.lang-switch{ display: flex; justify-content: flex-end; padding-top: 1rem;}
+.lang-switch select{ width: auto; margin: 0; padding: 0.25rem 2rem 0.25rem 0.75rem;}
+.hero{ text-align: center; padding: 2rem 1rem 2rem;}
+.hero .emoji{ width: 4rem; height: 4rem;}
+.hero p.lead{ font-size: 1.15rem; max-width: 42rem; margin: 1rem auto 2rem; color: var(--pico-muted-color);}
+.cta-group{ display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;}
+.badges{ display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0;}
+.badges img{ height: 20px;}
+section{ padding: 2.5rem 0;}
+section h2{ text-align: center; margin-bottom: 2rem;}
+.features-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;}
+.feature-card{ background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem;}
+.feature-card .icon{ width: 1.75rem; height: 1.75rem;}
+.feature-card h3{ margin: 0.5rem 0;}
+.feature-card p{ color: var(--pico-muted-color); margin: 0;}
+.commands-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;}
+.commands-grid table{ margin: 0;}
+.code-row{ display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;}
+.code-row code{ flex: 1; overflow-x: auto;}
+.copy-btn{ flex-shrink: 0; width: 1.75rem; height: 1.75rem; padding: 0; border: none; background: transparent; cursor: pointer; color: var(--pico-muted-color); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E"); mask-repeat: no-repeat; mask-position: center; mask-size: 1.1rem; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E"); -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-size: 1.1rem; background-color: currentColor;}
+.copy-btn:hover{ color: var(--pico-primary);}
+.copy-btn.copied{ color: var(--pico-ins-color, #2a9d5c); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");}
+footer{ text-align: center; padding: 2rem 0 3rem; color: var(--pico-muted-color);}
+footer a{ color: inherit;}

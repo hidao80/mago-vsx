@@ -51,24 +51,54 @@
 </script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-<style>
-:root{ --pico-font-size: 100%;} .hero{ text-align: center; padding: 3rem 1rem 2rem;} .hero .emoji{ width: 4rem; height: 4rem;} .hero p.lead{ font-size: 1.15rem; max-width: 42rem; margin: 1rem auto 2rem; color: var(--pico-muted-color);} .cta-group{ display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;} .badges{ display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0;} .badges img{ height: 20px;} section{ padding: 2.5rem 0;} section h2{ text-align: center; margin-bottom: 2rem;} .features-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;} .feature-card{ background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); padding: 1.5rem;} .feature-card .icon{ width: 1.75rem; height: 1.75rem;} .feature-card h3{ margin: 0.5rem 0;} .feature-card p{ color: var(--pico-muted-color); margin: 0;} .commands-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;} .commands-grid table{ margin: 0;} footer{ text-align: center; padding: 2rem 0 3rem; color: var(--pico-muted-color);} footer a{ color: inherit;}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <main class="container">
 
+  <div class="lang-switch">
+    <select id="lang-select" aria-label="Language">
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="zh">中文</option>
+      <option value="es">Español</option>
+      <option value="ru">Русский</option>
+    </select>
+  </div>
+
   <section class="hero">
     <img class="emoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f418.svg" alt="Elephant">
     <h1>Mago for VS Code</h1>
     <p class="lead">
-      PHP static analysis, right where you write code. Lint, analyze, format, and manage
-      baselines without leaving your editor — powered by <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>.
+      <template type="language-group">
+        <span language="en">PHP static analysis, right where you write code. Lint, analyze, format, and manage
+      baselines without leaving your editor — powered by <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>.</span>
+        <span language="ja">コードを書くその場でPHP静的解析。Lint・解析・フォーマット・ベースライン管理をエディタから離れずに実行 — <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>を利用。</span>
+        <span language="zh">在编写代码的地方进行 PHP 静态分析。无需离开编辑器即可进行 lint、分析、格式化和管理基线 — 由 <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a> 提供支持。</span>
+        <span language="es">Análisis estático de PHP justo donde escribes código. Lint, analiza, formatea y gestiona baselines sin salir de tu editor — impulsado por <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>.</span>
+        <span language="ru">Статический анализ PHP прямо там, где вы пишете код. Lint, анализ, форматирование и управление baseline без выхода из редактора — на основе <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>.</span>
+      </template>
     </p>
     <div class="cta-group">
-      <a role="button" href="https://marketplace.visualstudio.com/items?itemName=hidao80.mago-vsx" target="_blank" rel="noopener">Install from Marketplace</a>
-      <a role="button" class="secondary" href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">View on GitHub</a>
+      <a role="button" href="https://marketplace.visualstudio.com/items?itemName=hidao80.mago-vsx" target="_blank" rel="noopener">
+        <template type="language-group">
+          <span language="en">Install from Marketplace</span>
+          <span language="ja">Marketplaceからインストール</span>
+          <span language="zh">从市场安装</span>
+          <span language="es">Instalar desde Marketplace</span>
+          <span language="ru">Установить из Marketplace</span>
+        </template>
+      </a>
+      <a role="button" class="secondary" href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">
+        <template type="language-group">
+          <span language="en">View on GitHub</span>
+          <span language="ja">GitHubで見る</span>
+          <span language="zh">在 GitHub 上查看</span>
+          <span language="es">Ver en GitHub</span>
+          <span language="ru">Смотреть на GitHub</span>
+        </template>
+      </a>
     </div>
     <div class="badges">
       <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
@@ -79,71 +109,207 @@
   </section>
 
   <section id="features">
-    <h2>Features</h2>
+    <h2>
+      <template type="language-group">
+        <span language="en">Features</span>
+        <span language="ja">機能</span>
+        <span language="zh">功能</span>
+        <span language="es">Funciones</span>
+        <span language="ru">Возможности</span>
+      </template>
+    </h2>
     <div class="features-grid">
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f50d.svg" alt="Magnifying glass">
-        <h3>Lint &amp; Analyze</h3>
-        <p>Run Mago's lint and analyze commands on a single file or the whole project, with results reported straight into VS Code.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Lint &amp; Analyze</span>
+            <span language="ja">Lint＆解析</span>
+            <span language="zh">Lint 与分析</span>
+            <span language="es">Lint y análisis</span>
+            <span language="ru">Lint и анализ</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">Run Mago's lint and analyze commands on a single file or the whole project, with results reported straight into VS Code.</span>
+            <span language="ja">Magoのlintと解析コマンドを単一ファイルまたはプロジェクト全体に実行し、結果をVS Codeに直接反映。</span>
+            <span language="zh">对单个文件或整个项目运行 Mago 的 lint 和分析命令，结果直接报告到 VS Code。</span>
+            <span language="es">Ejecuta los comandos lint y analyze de Mago en un solo archivo o en todo el proyecto, con los resultados reportados directamente en VS Code.</span>
+            <span language="ru">Запускайте команды lint и analyze Mago для одного файла или всего проекта — результаты сразу отображаются в VS Code.</span>
+          </template>
+        </p>
       </article>
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f3a8.svg" alt="Artist palette">
-        <h3>Format PHP Files</h3>
-        <p>Format your code with Mago's formatter, including optional format-on-save.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Format PHP Files</span>
+            <span language="ja">PHPファイルのフォーマット</span>
+            <span language="zh">格式化 PHP 文件</span>
+            <span language="es">Formatear archivos PHP</span>
+            <span language="ru">Форматирование PHP-файлов</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">Format your code with Mago's formatter, including optional format-on-save.</span>
+            <span language="ja">Magoのフォーマッタでコードを整形。保存時フォーマットもオプションで利用可能。</span>
+            <span language="zh">使用 Mago 的格式化工具格式化代码，支持可选的保存时格式化。</span>
+            <span language="es">Formatea tu código con el formateador de Mago, incluyendo formato opcional al guardar.</span>
+            <span language="ru">Форматируйте код с помощью форматтера Mago, включая опциональное форматирование при сохранении.</span>
+          </template>
+        </p>
       </article>
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f4d0.svg" alt="Triangular ruler">
-        <h3>Baseline Support</h3>
-        <p>Suppress existing issues with baseline files so you can focus on what's new — ideal for legacy codebases.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Baseline Support</span>
+            <span language="ja">ベースライン対応</span>
+            <span language="zh">基线支持</span>
+            <span language="es">Soporte de baseline</span>
+            <span language="ru">Поддержка baseline</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">Suppress existing issues with baseline files so you can focus on what's new — ideal for legacy codebases.</span>
+            <span language="ja">ベースラインファイルで既存の問題を抑制し、新規問題に集中 — レガシーコードベースに最適。</span>
+            <span language="zh">使用基线文件抑制现有问题，专注于新问题 — 非常适合遗留代码库。</span>
+            <span language="es">Suprime problemas existentes con archivos baseline para centrarte en lo nuevo — ideal para bases de código heredadas.</span>
+            <span language="ru">Подавляйте существующие проблемы с помощью baseline-файлов, чтобы сосредоточиться на новых — идеально для устаревших кодовых баз.</span>
+          </template>
+        </p>
       </article>
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f9e9.svg" alt="Puzzle piece">
-        <h3>Problems Pane Integration</h3>
-        <p>All detected issues appear in VS Code's native Problems pane with collapsible details.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Problems Pane Integration</span>
+            <span language="ja">問題パネル統合</span>
+            <span language="zh">问题面板集成</span>
+            <span language="es">Integración con panel de problemas</span>
+            <span language="ru">Интеграция с панелью проблем</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">All detected issues appear in VS Code's native Problems pane with collapsible details.</span>
+            <span language="ja">検出された問題はVS Code標準の問題パネルに折りたたみ可能な詳細付きで表示。</span>
+            <span language="zh">所有检测到的问题都会显示在 VS Code 原生的问题面板中，并带有可折叠的详细信息。</span>
+            <span language="es">Todos los problemas detectados aparecen en el panel de problemas nativo de VS Code con detalles colapsables.</span>
+            <span language="ru">Все обнаруженные проблемы отображаются в стандартной панели проблем VS Code со сворачиваемыми деталями.</span>
+          </template>
+        </p>
       </article>
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/1f4be.svg" alt="Floppy disk">
-        <h3>Auto-run on Save</h3>
-        <p>Automatically lint, analyze, and format files whenever you save, with each behavior independently configurable.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Auto-run on Save</span>
+            <span language="ja">保存時自動実行</span>
+            <span language="zh">保存时自动运行</span>
+            <span language="es">Ejecución automática al guardar</span>
+            <span language="ru">Автозапуск при сохранении</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">Automatically lint, analyze, and format files whenever you save, with each behavior independently configurable.</span>
+            <span language="ja">保存のたびにlint・解析・フォーマットを自動実行。各動作は個別に設定可能。</span>
+            <span language="zh">保存文件时自动执行 lint、分析和格式化，每个行为均可独立配置。</span>
+            <span language="es">Ejecuta automáticamente lint, análisis y formato al guardar, con cada comportamiento configurable de forma independiente.</span>
+            <span language="ru">Автоматически выполняйте lint, анализ и форматирование при каждом сохранении — каждое поведение настраивается независимо.</span>
+          </template>
+        </p>
       </article>
       <article class="feature-card">
         <img class="icon" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/svg/2328.svg" alt="Keyboard">
-        <h3>Command Palette</h3>
-        <p>Access every Mago command directly from VS Code's command palette — no context switching required.</p>
+        <h3>
+          <template type="language-group">
+            <span language="en">Command Palette</span>
+            <span language="ja">コマンドパレット</span>
+            <span language="zh">命令面板</span>
+            <span language="es">Paleta de comandos</span>
+            <span language="ru">Палитра команд</span>
+          </template>
+        </h3>
+        <p>
+          <template type="language-group">
+            <span language="en">Access every Mago command directly from VS Code's command palette — no context switching required.</span>
+            <span language="ja">すべてのMagoコマンドにVS Codeのコマンドパレットから直接アクセス — コンテキスト切替不要。</span>
+            <span language="zh">直接从 VS Code 的命令面板访问所有 Mago 命令 — 无需切换上下文。</span>
+            <span language="es">Accede a todos los comandos de Mago directamente desde la paleta de comandos de VS Code — sin cambiar de contexto.</span>
+            <span language="ru">Доступ ко всем командам Mago прямо из палитры команд VS Code — без переключения контекста.</span>
+          </template>
+        </p>
       </article>
     </div>
   </section>
 
   <section id="commands">
-    <h2>Commands</h2>
+    <h2>
+      <template type="language-group">
+        <span language="en">Commands</span>
+        <span language="ja">コマンド</span>
+        <span language="zh">命令</span>
+        <span language="es">Comandos</span>
+        <span language="ru">Команды</span>
+      </template>
+    </h2>
     <div class="commands-grid">
       <div>
-        <h4>Lint &amp; Analyze</h4>
+        <h4>
+          <template type="language-group">
+            <span language="en">Lint &amp; Analyze</span>
+            <span language="ja">Lint＆解析</span>
+            <span language="zh">Lint 与分析</span>
+            <span language="es">Lint y análisis</span>
+            <span language="ru">Lint и анализ</span>
+          </template>
+        </h4>
         <table>
           <tbody>
-            <tr><td><code>Mago: Lint Current File</code></td></tr>
-            <tr><td><code>Mago: Analyze Current File</code></td></tr>
-            <tr><td><code>Mago: Lint &amp; Analyze Current File</code></td></tr>
-            <tr><td><code>Mago: Lint Project</code></td></tr>
-            <tr><td><code>Mago: Analyze Project</code></td></tr>
-            <tr><td><code>Mago: Lint &amp; Analyze Project</code></td></tr>
+            <tr><td class="code-row"><code>Mago: Lint Current File</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Analyze Current File</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Lint &amp; Analyze Current File</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Lint Project</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Analyze Project</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Lint &amp; Analyze Project</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
           </tbody>
         </table>
       </div>
       <div>
-        <h4>Format</h4>
+        <h4>
+          <template type="language-group">
+            <span language="en">Format</span>
+            <span language="ja">フォーマット</span>
+            <span language="zh">格式化</span>
+            <span language="es">Formato</span>
+            <span language="ru">Форматирование</span>
+          </template>
+        </h4>
         <table>
           <tbody>
-            <tr><td><code>Mago: Format Current File</code></td></tr>
-            <tr><td><code>Mago: Format Project</code></td></tr>
-            <tr><td><code>Mago: Format Check (CI)</code></td></tr>
+            <tr><td class="code-row"><code>Mago: Format Current File</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Format Project</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Format Check (CI)</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
           </tbody>
         </table>
-        <h4>Baseline</h4>
+        <h4>
+          <template type="language-group">
+            <span language="en">Baseline</span>
+            <span language="ja">ベースライン</span>
+            <span language="zh">基线</span>
+            <span language="es">Baseline</span>
+            <span language="ru">Baseline</span>
+          </template>
+        </h4>
         <table>
           <tbody>
-            <tr><td><code>Mago: Generate Lint Baseline</code></td></tr>
-            <tr><td><code>Mago: Generate Analyze Baseline</code></td></tr>
+            <tr><td class="code-row"><code>Mago: Generate Lint Baseline</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
+            <tr><td class="code-row"><code>Mago: Generate Analyze Baseline</code><button class="copy-btn" aria-label="Copy"></button></td></tr>
           </tbody>
         </table>
       </div>
@@ -151,24 +317,87 @@
   </section>
 
   <section id="get-started">
-    <h2>Get Started</h2>
+    <h2>
+      <template type="language-group">
+        <span language="en">Get Started</span>
+        <span language="ja">はじめに</span>
+        <span language="zh">快速开始</span>
+        <span language="es">Primeros pasos</span>
+        <span language="ru">Начало работы</span>
+      </template>
+    </h2>
     <ol>
-      <li>Install Mago and make sure it's available on your <code>PATH</code> (or set <code>mago.executablePath</code>).</li>
-      <li>Install the extension from the VS Code Marketplace.</li>
-      <li>Open a PHP file — lint and analyze run automatically on save.</li>
-      <li>Check results in the Problems pane (<kbd>View</kbd> → <kbd>Problems</kbd>).</li>
+      <li>
+        <template type="language-group">
+          <span language="en">Install Mago and make sure it's available on your <code>PATH</code> (or set <code>mago.executablePath</code>).</span>
+          <span language="ja">Magoをインストールし<code>PATH</code>から使える状態にする（または<code>mago.executablePath</code>を設定）。</span>
+          <span language="zh">安装 Mago 并确保它在 <code>PATH</code> 中可用（或设置 <code>mago.executablePath</code>）。</span>
+          <span language="es">Instala Mago y asegúrate de que esté disponible en tu <code>PATH</code> (o configura <code>mago.executablePath</code>).</span>
+          <span language="ru">Установите Mago и убедитесь, что он доступен в <code>PATH</code> (или задайте <code>mago.executablePath</code>).</span>
+        </template>
+      </li>
+      <li>
+        <template type="language-group">
+          <span language="en">Install the extension from the VS Code Marketplace.</span>
+          <span language="ja">VS Code Marketplaceから拡張機能をインストール。</span>
+          <span language="zh">从 VS Code 市场安装扩展。</span>
+          <span language="es">Instala la extensión desde VS Code Marketplace.</span>
+          <span language="ru">Установите расширение из VS Code Marketplace.</span>
+        </template>
+      </li>
+      <li>
+        <template type="language-group">
+          <span language="en">Open a PHP file — lint and analyze run automatically on save.</span>
+          <span language="ja">PHPファイルを開く — 保存時にlintと解析が自動実行。</span>
+          <span language="zh">打开一个 PHP 文件 — 保存时自动运行 lint 和分析。</span>
+          <span language="es">Abre un archivo PHP — lint y análisis se ejecutan automáticamente al guardar.</span>
+          <span language="ru">Откройте PHP-файл — lint и анализ запускаются автоматически при сохранении.</span>
+        </template>
+      </li>
+      <li>
+        <template type="language-group">
+          <span language="en">Check results in the Problems pane (<kbd>View</kbd> → <kbd>Problems</kbd>).</span>
+          <span language="ja">問題パネルで結果を確認（<kbd>View</kbd> → <kbd>Problems</kbd>）。</span>
+          <span language="zh">在问题面板中查看结果（<kbd>View</kbd> → <kbd>Problems</kbd>）。</span>
+          <span language="es">Revisa los resultados en el panel de problemas (<kbd>View</kbd> → <kbd>Problems</kbd>).</span>
+          <span language="ru">Проверьте результаты на панели проблем (<kbd>View</kbd> → <kbd>Problems</kbd>).</span>
+        </template>
+      </li>
     </ol>
   </section>
 
   <footer>
     <p>
-      MIT Licensed · <a href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">GitHub</a> ·
-      <a href="https://github.com/hidao80/mago-vsx/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a> ·
-      Built on <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>
+      <template type="language-group">
+        <span language="en">MIT Licensed</span>
+        <span language="ja">MITライセンス</span>
+        <span language="zh">MIT 许可证</span>
+        <span language="es">Licencia MIT</span>
+        <span language="ru">Лицензия MIT</span>
+      </template>
+      · <a href="https://github.com/hidao80/mago-vsx" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://github.com/hidao80/mago-vsx/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener">
+        <template type="language-group">
+          <span language="en">Changelog</span>
+          <span language="ja">変更履歴</span>
+          <span language="zh">更新日志</span>
+          <span language="es">Historial de cambios</span>
+          <span language="ru">Журнал изменений</span>
+        </template>
+      </a> ·
+      <template type="language-group">
+        <span language="en">Built on <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a></span>
+        <span language="ja"><a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a>をベースに構築</span>
+        <span language="zh">基于 <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a> 构建</span>
+        <span language="es">Construido sobre <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a></span>
+        <span language="ru">Построено на основе <a href="https://github.com/carthage-software/mago" target="_blank" rel="noopener">Mago</a></span>
+      </template>
     </p>
   </footer>
 
 </main>
 
+<script src="https://unpkg.com/multilanguagejs@2.0.1/dist/multilanguagejs.umd.cjs"></script>
+<script src="main.min.js"></script>
 </body>
 </html>
